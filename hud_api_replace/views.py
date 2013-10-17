@@ -20,7 +20,6 @@ logging.basicConfig(level=logging.DEBUG, filename='/tmp/aaaa')
 def google_maps_api( zipcode ):
     # Google API
     address = zipcode
-    address = 'ABCDE'
     url = "http://maps.googleapis.com/maps/api/geocode/json?address=%s&sensor=false&" % address
     try:
         response = urllib2.urlopen( url )
@@ -59,8 +58,8 @@ def dstk_api( zipcode ):
 
 def geocode_zip( zipcode ):
     # use google api or dstk
-    #return google_maps_api( zipcode )
-    return dstk_api( zipcode )
+    return google_maps_api( zipcode )
+    #return dstk_api( zipcode )
 
 
 # list of fields that are returned from the API
