@@ -36,9 +36,9 @@
 
       $.each( data.counseling_agencies, function( ndx, val ) {
         var marker = new google.maps.Marker({
-          position: new google.maps.LatLng(val.lat, val.lng),
+          position: new google.maps.LatLng(val.agc_ADDR_LATITUDE, val.agc_ADDR_LONGITUDE),
           map: map,
-          title: val.name,
+          title: val.nme,
         });
       });
     }

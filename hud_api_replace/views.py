@@ -63,14 +63,12 @@ def geocode_zip( zipcode ):
 
 
 # list of fields that are returned from the API
+# right now returns all fields
 def return_fields( row ):
-    return {
-        'name': row.nme,
-        'addr1': row.adr1,
-        'addr2': row.adr2,
-        'zipcode': row.zipcd,
-        'lat': row.agc_ADDR_LATITUDE,
-        'lng': row.agc_ADDR_LONGITUDE}
+    fields = row._meta.fields
+    fields_values = { field.attname: getattr( row, field.attname ) for field in fields }
+
+    return fields_values
 
 
 def get_counsel_list( zipcode, GET ):
