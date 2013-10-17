@@ -28,11 +28,15 @@ def google_maps_api( zipcode ):
         if jsongeocode['results'][0]['geometry']:
             lat = jsongeocode['results'][0]['geometry']['location']['lat']
             lng = jsongeocode['results'][0]['geometry']['location']['lng']
-            return [lat, lng]
+            return { 'zip': {
+                'zipcode': zipcode,
+                'lat': lat,
+                'lng': lng,
+            }}
     except:
         # how to handle errors?
         logging.exception(' OOPS: ')
-        return []
+        return {'error': 'Error while getting geocoding information for ' + zipcode}
 
 
 def dstk_api( zipcode ):
@@ -43,10 +47,14 @@ def dstk_api( zipcode ):
     address = zipcode + ', US'
     data = dst.street2coordinates( [address] )
     if isinstance( data[address], dict ):
-        return [ data[address]['latitude'], data[address]['longitude'] ]
+        return { 'zip': {
+            'zipcode': zipcode,
+            'lat': data[address]['latitude'],
+            'lng': data[address]['longitude'],
+        }}
     else:
         logging.exception(' OOPS: ')
-        return []
+        return {'error': 'Error while getting geocoding information for ' + zipcode}
 
 
 def geocode_zip( zipcode ):
@@ -54,37 +62,51 @@ def geocode_zip( zipcode ):
     #return google_maps_api( zipcode )
     return dstk_api( zipcode )
 
+
+# list of fields that are returned from the API
+def return_fields( row ):
+    return {
+        'name': row.nme,
+        'addr1': row.adr1,
+        'addr2': row.adr2,
+        'zipcode': row.zipcd,
+        'lat': row.agc_ADDR_LATITUDE,
+        'lng': row.agc_ADDR_LONGITUDE}
+
+
 def get_counsel_list( zipcode, GET ):
     distance = GET.get( 'distance', 5000 )
     limit = GET.get( 'limit', 10 )
     offset = GET.get( 'offset', 0 ) * limit
 
     # geocoding to get zipcode lat/long
-    (latitude, longitude) = geocode_zip( zipcode )
+    data = geocode_zip( zipcode )
+    if 'zip' in data:
+        latitude = data['zip']['lat']
+        longitude = data['zip']['lng']
 
-    # from
-    # http://stackoverflow.com/questions/1916953/filter-zipcodes-by-proximity-in-django-with-the-spherical-law-of-cosines
-    eradius = 3959 # Earth radius in miles
-    cursor = connection.cursor()
-    sql = """SELECT id, (%f * acos( cos( radians(%f) ) * cos( radians( agc_ADDR_LATITUDE ) ) *
-        cos( radians( agc_ADDR_LONGITUDE ) - radians(%f) ) + sin( radians(%f) ) * sin( radians( agc_ADDR_LATITUDE ) ) ) )
-        AS distance FROM hud_api_replace_counselingagency HAVING distance < %d
-        ORDER BY distance LIMIT %d OFFSET %d;""" % (eradius, latitude, longitude, latitude, distance, limit, offset)
-    cursor.execute(sql)
-    ids = [row[0] for row in cursor.fetchall()]
+        # from
+        # http://stackoverflow.com/questions/1916953/filter-zipcodes-by-proximity-in-django-with-the-spherical-law-of-cosines
+        eradius = 3959 # Earth radius in miles
+        cursor = connection.cursor()
+        sql = """SELECT id, (%f * acos( cos( radians(%f) ) * cos( radians( agc_ADDR_LATITUDE ) ) *
+            cos( radians( agc_ADDR_LONGITUDE ) - radians(%f) ) + sin( radians(%f) ) * sin( radians( agc_ADDR_LATITUDE ) ) ) )
+            AS distance FROM hud_api_replace_counselingagency HAVING distance < %d
+            ORDER BY distance LIMIT %d OFFSET %d;""" % (eradius, latitude, longitude, latitude, distance, limit, offset)
+        cursor.execute(sql)
+        ids = [row[0] for row in cursor.fetchall()]
 
-    return CounselingAgency.objects.filter( id__in = ids )
+        ca_list = CounselingAgency.objects.filter( id__in = ids )
+        data['counseling_agencies'] = { agc.id: return_fields( agc ) for agc in ca_list }
+
+    return data
 
 
 def api_entry( request, zipcode = 0, output_format = 'json' ):
     if output_format == 'csv':
         return export_csv( request, zipcode )
     else:
-        return export_json( request, zipcode )
-
-# list of fields that are returned from the API
-def return_fields( row ):
-    return [ row.nme, row.adr1, row.adr2, row.zipcd ]
+        return return_json( request, zipcode )
 
 
 def export_csv( request, zipcode ):
@@ -93,15 +115,15 @@ def export_csv( request, zipcode ):
 
     data = get_counsel_list( zipcode, request.GET )
     writer = csv.writer( response )
-    for row in data:
-        writer.writerow( return_fields( row ) )
+    writer.writerow( data )
 
     return response
 
-def export_json( request, zipcode ):
-    response = HttpResponse(content_type='application/json')
-    response['Content-Disposition'] = 'attachment; filename="' + zipcode + '.json"'
+
+def return_json( request, zipcode ):
+#    response = HttpResponse(content_type='application/json')
+#    response['Content-Disposition'] = 'attachment; filename="' + zipcode + '.json"'
+    response = HttpResponse()
     data = get_counsel_list( zipcode, request.GET )
-    for row in data:
-        response.write( json.dumps( return_fields( row ) ) )
+    response.write( json.dumps( data ) )
     return response
