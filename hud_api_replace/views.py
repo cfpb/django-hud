@@ -6,19 +6,22 @@ from django.db import connection, transaction
 import csv
 import json
 import urllib2
+# need to pip install dstk first
+import dstk
+
 import logging
 
 from .models import CounselingAgency
 
 
-def geocode_zip( zipcode ):
-    # use google api or dstk
+logging.basicConfig(level=logging.DEBUG, filename='/tmp/aaaa')
 
+
+def google_maps_api( zipcode ):
     # Google API
     address = zipcode
     address = 'ABCDE'
     url = "http://maps.googleapis.com/maps/api/geocode/json?address=%s&sensor=false&" % address
-    logging.basicConfig(level=logging.DEBUG, filename='/tmp/aaaa')
     try:
         response = urllib2.urlopen( url )
         jsongeocode = json.loads( response.read() )
@@ -31,9 +34,25 @@ def geocode_zip( zipcode ):
         logging.exception(' OOPS: ')
         return []
 
-    # for now returns default lat long for 22030
-    return [38.8462, -77.3279]
 
+def dstk_api( zipcode ):
+    # dstk = dstk.DSTK( {'apiBase': 'http://dstk.address.com'} )
+    # or set DSTK_API_BASE env variable
+    # by default connects to http://datasciencetoolkit.org
+    dst = dstk.DSTK()
+    address = zipcode + ', US'
+    data = dst.street2coordinates( [address] )
+    if isinstance( data[address], dict ):
+        return [ data[address]['latitude'], data[address]['longitude'] ]
+    else:
+        logging.exception(' OOPS: ')
+        return []
+
+
+def geocode_zip( zipcode ):
+    # use google api or dstk
+    #return google_maps_api( zipcode )
+    return dstk_api( zipcode )
 
 def get_counsel_list( zipcode, GET ):
     distance = GET.get( 'distance', 5000 )
