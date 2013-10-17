@@ -46,7 +46,7 @@
     function show_map() {
       $.ajax({
         // This will be changed to the API address
-        url: 'http://127.0.0.1:8000/hud-api-replace/22030/',
+        url: 'http://127.0.0.1:8000/hud-api-replace/22030'
       }).done( function( data ) {
         if ( !data.error ) {
           initialize( $.parseJSON( data ))

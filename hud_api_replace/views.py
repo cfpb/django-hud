@@ -72,9 +72,9 @@ def return_fields( row ):
 
 
 def get_counsel_list( zipcode, GET ):
-    distance = GET.get( 'distance', 5000 )
-    limit = GET.get( 'limit', 10 )
-    offset = GET.get( 'offset', 0 ) * limit
+    distance = int(GET.get( 'distance', '5000' ))
+    limit = int(GET.get( 'limit', '10' ))
+    offset = int(GET.get( 'offset', '0' )) * limit
 
     # geocoding to get zipcode lat/long
     data = geocode_zip( zipcode )
