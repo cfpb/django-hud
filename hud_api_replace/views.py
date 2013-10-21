@@ -6,6 +6,7 @@ from django.db import connection, transaction
 import csv
 import json
 import urllib2
+import math
 # need to pip install dstk first
 import dstk
 
@@ -91,10 +92,14 @@ def get_counsel_list( zipcode, GET ):
             AS distance FROM hud_api_replace_counselingagency HAVING distance < %d
             ORDER BY distance LIMIT %d OFFSET %d;""" % (eradius, latitude, longitude, latitude, distance, limit, offset)
         cursor.execute(sql)
-        ids = [row[0] for row in cursor.fetchall()]
+        result = cursor.fetchall()
+        ids = [row[0] for row in result]
 
         ca_list = CounselingAgency.objects.filter( id__in = ids )
         data['counseling_agencies'] = { agc.id: return_fields( agc ) for agc in ca_list }
+        # add distance to data['counseling_agencies']
+        for row in result:
+            data['counseling_agencies'][row[0]]['distance'] = math.floor( row[1] )
 
     return data
 
