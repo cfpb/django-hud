@@ -6,7 +6,6 @@ from django.db import connection, transaction
 import csv
 import json
 import urllib2
-import math
 # need to pip install dstk first
 import dstk
 
@@ -72,7 +71,7 @@ def return_fields( row ):
     for field in fields:
         fields_values[ field.attname ] = row[ fields.index( field ) ]
 
-    fields_values['distance'] = math.floor( row[ -1 ] )
+    fields_values['distance'] = round( row[ -1 ], 1 )
 
     return fields_values
 
