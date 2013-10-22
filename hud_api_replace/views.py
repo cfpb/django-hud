@@ -66,11 +66,13 @@ def geocode_zip( zipcode ):
 # list of fields that are returned from the API
 # right now returns all fields
 def return_fields( row ):
-    fields = row._meta.fields
+    fields = CounselingAgency._meta.fields
     #fields_values = { field.attname: getattr( row, field.attname ) for field in fields }
     fields_values = {}
     for field in fields:
-        fields_values[field.attname] = getattr( row, field.attname )
+        fields_values[ field.attname ] = row[ fields.index( field ) ]
+
+    fields_values['distance'] = math.floor( row[ -1 ] )
 
     return fields_values
 
@@ -90,23 +92,13 @@ def get_counsel_list( zipcode, GET ):
         # http://stackoverflow.com/questions/1916953/filter-zipcodes-by-proximity-in-django-with-the-spherical-law-of-cosines
         eradius = 3959 # Earth radius in miles
         cursor = connection.cursor()
-        sql = """SELECT id, (%f * acos( cos( radians(%f) ) * cos( radians( agc_ADDR_LATITUDE ) ) *
+        sql = """SELECT *, (%f * acos( cos( radians(%f) ) * cos( radians( agc_ADDR_LATITUDE ) ) *
             cos( radians( agc_ADDR_LONGITUDE ) - radians(%f) ) + sin( radians(%f) ) * sin( radians( agc_ADDR_LATITUDE ) ) ) )
             AS distance FROM hud_api_replace_counselingagency HAVING distance < %d
             ORDER BY distance LIMIT %d OFFSET %d;""" % (eradius, latitude, longitude, latitude, distance, limit, offset)
         cursor.execute(sql)
         result = cursor.fetchall()
-        ids = [row[0] for row in result]
-
-        ca_list = CounselingAgency.objects.filter( id__in = ids )
-        #data['counseling_agencies'] = { agc.id: return_fields( agc ) for agc in ca_list }
-        data['counseling_agencies'] = {}
-        for agc in ca_list:
-            data['counseling_agencies'][agc.id] = return_fields( agc )
-
-        # add distance to data['counseling_agencies']
-        for row in result:
-            data['counseling_agencies'][row[0]]['distance'] = math.floor( row[1] )
+        data['counseling_agencies'] = [ return_fields( agc ) for agc in result ]
 
     return data
 
