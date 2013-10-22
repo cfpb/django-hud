@@ -67,7 +67,10 @@ def geocode_zip( zipcode ):
 # right now returns all fields
 def return_fields( row ):
     fields = row._meta.fields
-    fields_values = { field.attname: getattr( row, field.attname ) for field in fields }
+    #fields_values = { field.attname: getattr( row, field.attname ) for field in fields }
+    fields_values = {}
+    for field in fields:
+        fields_values[field.attname] = getattr( row, field.attname )
 
     return fields_values
 
@@ -96,7 +99,11 @@ def get_counsel_list( zipcode, GET ):
         ids = [row[0] for row in result]
 
         ca_list = CounselingAgency.objects.filter( id__in = ids )
-        data['counseling_agencies'] = { agc.id: return_fields( agc ) for agc in ca_list }
+        #data['counseling_agencies'] = { agc.id: return_fields( agc ) for agc in ca_list }
+        data['counseling_agencies'] = {}
+        for agc in ca_list:
+            data['counseling_agencies'][agc.id] = return_fields( agc )
+
         # add distance to data['counseling_agencies']
         for row in result:
             data['counseling_agencies'][row[0]]['distance'] = math.floor( row[1] )
