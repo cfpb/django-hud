@@ -122,7 +122,7 @@ def export_csv( request, zipcode ):
 
 
 def return_json( request, zipcode ):
-#    response = HttpResponse(content_type='application/json')
+    response = HttpResponse(content_type='application/json')
 #    response['Content-Disposition'] = 'attachment; filename="' + zipcode + '.json"'
     response = HttpResponse()
     data = get_counsel_list( zipcode, request.GET )
