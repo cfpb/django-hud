@@ -7,7 +7,7 @@ import csv
 import json
 import urllib2
 # need to pip install dstk first
-import dstk
+#import dstk
 
 import logging
 
