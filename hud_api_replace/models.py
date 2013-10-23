@@ -21,7 +21,8 @@ class CounselingAgency( models.Model ):
     agc_ADDR_LATITUDE = models.CharField( max_length = 40)      # ex "39.658075",
     agc_ADDR_LONGITUDE = models.CharField( max_length = 40)     # ex "-75.74669",
     languages = models.CharField( max_length = 255 )            # ex "ENG,SPA",
-    services = models.CharField( max_length = 255 )             # ex "DFC,DFW,FBC,NDW,PPC,PPW",
+    # These can get really lengthy, and those agencies won't be installed as a result
+    services = models.CharField( max_length = 1500 )             # ex "DFC,DFW,FBC,NDW,PPC,PPW",
     parentid = models.CharField( max_length = 9 )               # ex "81210",
     county_nme = models.CharField( max_length = 255 )           # ex "",
     phone2 = models.CharField( max_length = 20)                 # ex " ",
@@ -39,5 +40,6 @@ class CounselingAgency( models.Model ):
     agc_SRC_CD = models.CharField( max_length = 255 )           # ex "HUD",
     counslg_METHOD = models.CharField( max_length = 255 )       # ex null
 
-
+    def __unicode__( self ):
+        return self.nme
 
