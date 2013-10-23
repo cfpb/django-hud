@@ -126,9 +126,6 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
     'south',
     'hud_api_replace',
-    'cron_job',
-    # test my API, untill I figure out how to run Django and WordPress together.
-    'easy_test',
 )
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
