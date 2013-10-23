@@ -28,7 +28,7 @@ formatted as `json`:
 
 `hud-api-replace/20005?limit=5&offset=1&distance=100`
 
-## cron_job managementcommand
+## cron_job management command
 
 `./manage.py cron_job` will load HUD data into hud_api_replace_counselingagencies local table. Error messages will
 be printed to stderr if any, but no other means of error notification are present.
