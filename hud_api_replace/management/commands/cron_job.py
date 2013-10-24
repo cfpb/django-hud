@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
+from django.core.mail import EmailMessage
 
 import urllib2
 import json
@@ -10,10 +11,15 @@ from hud_api_replace.models import CounselingAgency
 class Command( BaseCommand ):
     args = ''
     help = 'Loads data from HUD into local hud_api_replace_counselingagency table.'
+    errors = ''
 
     def handle( self, *args, **options ):
         self.load_hud_data()
+        if self.errors != '':
+            email = EmailMessage('Errors while loading HUD data', self.errors, to = ['test3@example.com'])
+            email.send()
         self.stdout.write('HUD data has been loaded.')
+
 
     # Shamelessly copied most of hud-api-proxy.php
     def title_case( self, string ):
@@ -151,7 +157,7 @@ class Command( BaseCommand ):
             obj.save()
         except Exception as e:
             # email somebody about the error
-            self.stderr.write('Error while saving agency |%s|: %s' % ( obj.nme, e ))
+            self.errors += 'Error while saving agency [%s]: %s\n' % ( obj.nme, e )
             return
 
 
@@ -166,7 +172,7 @@ class Command( BaseCommand ):
             response = urllib2.urlopen( "%s?Lat=%s&Long=%s&Distance=%s" % ( hud_api_url, dc_lat, dc_long, distance ) )
             data = json.loads( response.read() )
         except URLException as e:
-            self.stderr.write('Error when accessing HUD server: %s' % e.reason )
+            self.errors += 'Error when accessing HUD server: %s\n' % e.reason 
 
         # delete from hud_api_replace_counselingagency
         CounselingAgency.objects.all().delete()
