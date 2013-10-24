@@ -9,12 +9,7 @@ import urllib2
 # need to pip install dstk first
 #import dstk
 
-import logging
-
 from .models import CounselingAgency
-
-
-logging.basicConfig(level=logging.DEBUG, filename='/tmp/aaaa')
 
 
 def google_maps_api( zipcode ):
@@ -34,7 +29,6 @@ def google_maps_api( zipcode ):
             }}
     except:
         # how to handle errors?
-        logging.exception(' OOPS: ')
         return {'error': 'Error while getting geocoding information for ' + zipcode}
 
 
@@ -52,7 +46,6 @@ def dstk_api( zipcode ):
             'lng': data[address]['longitude'],
         }}
     else:
-        logging.exception(' OOPS: ')
         return {'error': 'Error while getting geocoding information for ' + zipcode}
 
 
