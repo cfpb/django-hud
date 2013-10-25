@@ -77,6 +77,9 @@ class Command( BaseCommand ):
             verbose_services += prepend + services.get(srv, srv)
             prepend = ', '
 
+        if verbose_services == '':
+            verbose_services = 'Not available'
+
         return verbose_services
 
 
