@@ -43,9 +43,15 @@ class Command( BaseCommand ):
         langs = string.split(',')
         verbose_languages = ''
         prepend = ''
+        other = ''
         for lang in langs:
-            verbose_languages += prepend + languages.get(lang, lang)
-            prepend = ', '
+            if lang == 'OTH':
+                other = ', Other'
+            else:
+                verbose_languages += prepend + languages.get(lang, lang)
+                prepend = ', '
+
+        verbose_languages += other
 
         return verbose_languages
 
