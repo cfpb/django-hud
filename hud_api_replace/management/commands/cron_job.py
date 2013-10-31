@@ -12,11 +12,12 @@ class Command( BaseCommand ):
     args = ''
     help = 'Loads data from HUD into local hud_api_replace_counselingagency table.'
     errors = ''
+    notify_emails = [ 'test3@example.com' ]
 
     def handle( self, *args, **options ):
         self.load_hud_data()
         if self.errors != '':
-            email = EmailMessage('Errors while loading HUD data', self.errors, to = ['test3@example.com'])
+            email = EmailMessage('Errors while loading HUD data', self.errors, to = notify_emails)
             email.send()
         self.stdout.write('HUD data has been loaded.')
 

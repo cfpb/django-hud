@@ -35,4 +35,4 @@ formatted as `json`:
 ## cron_job management command
 
 `./manage.py cron_job` will load HUD data into hud_api_replace_counselingagencies local table. Error messages will
-be printed to stderr if any, but no other means of error notification are present.
+be emailed to a list of emails (right now consisting of test3@example.com only).
