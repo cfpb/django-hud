@@ -1,5 +1,9 @@
 This represents a django project to replace HUD API.
 
+### Environmental variable GOOGLE_MAPS_API_PRIVATE_KEY must be set.
+
+### Environmental variable GOOGLE_MAPS_API_CLIENT_ID must be set.
+
 ## hud_api_replace
 
 This module is used to return a list of HUD-approved agencies sorted ascending by distance from a given zipcode. It

@@ -6,17 +6,33 @@ from django.db import connection, transaction
 import csv
 import json
 import urllib2
+import urllib, urlparse
+import hmac, base64, hashlib
+import os
 # need to pip install dstk first
 #import dstk
 
 from .models import CounselingAgency
 
+def signed_url( url, privateKey ):
+    """ Google Maps API requires signature parameter, this function generates it and returns the new url
+    see example on https://developers.google.com/maps/documentation/business/webservices/auth """
+    parsed = urlparse.urlparse( url )
+    urlToSign = parsed.path + "?" + parsed.query
+    decodedKey = base64.urlsafe_b64decode( privateKey )
+    signature = hmac.new( decodedKey, urlToSign, hashlib.sha1 )
+    encodedSignature = base64.urlsafe_b64encode( signature.digest() )
+    return url + '&signature=' + encodedSignature
 
 def google_maps_api( zipcode ):
-    # Google API
+    """ Google API """
     address = zipcode
-    url = "http://maps.googleapis.com/maps/api/geocode/json?address=%s&sensor=false&" % address
+    url = "http://maps.googleapis.com/maps/api/geocode/json?address=%s&sensor=false" % address
     try:
+        privateKey = os.environ['GOOGLE_MAPS_API_PRIVATE_KEY']
+        clientID = os.environ['GOOGLE_MAPS_API_CLIENT_ID']
+        url += '&client=' + clientID
+        url = signed_url( url, privateKey )
         response = urllib2.urlopen( url )
         jsongeocode = json.loads( response.read() )
         if jsongeocode['results'][0]['geometry']:
@@ -27,8 +43,9 @@ def google_maps_api( zipcode ):
                 'lat': lat,
                 'lng': lng,
             }}
+    except KeyError:
+        return {'error': 'Environmental variables GOOGLE_MAPS_API_PRIVATE_KEY and GOOGLE_MAPS_API_CLIENT_ID must be set'}
     except:
-        # how to handle errors?
         return {'error': 'Error while getting geocoding information for ' + zipcode}
 
 
