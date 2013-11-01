@@ -5,7 +5,7 @@ import urllib2
 import json
 import re
 
-from hud_api_replace.models import CounselingAgency
+from hud_api_replace.models import CounselingAgency, Language, Service
 
 
 class Command( BaseCommand ):
@@ -13,6 +13,8 @@ class Command( BaseCommand ):
     help = 'Loads data from HUD into local hud_api_replace_counselingagency table.'
     errors = ''
     notify_emails = [ 'test3@example.com' ]
+    languages = {}
+    services = {}
 
     def handle( self, *args, **options ):
         self.load_hud_data()
@@ -20,6 +22,122 @@ class Command( BaseCommand ):
             email = EmailMessage('Errors while loading HUD data', self.errors, to = notify_emails)
             email.send()
         self.stdout.write('HUD data has been loaded.')
+
+
+    def load_hud_data( self ):
+        for step in ['languages', 'services', 'agencies']:
+            data = self.hud_data( step )
+            if not data and step != 'agencies':
+                self.load_from_local_db( step )
+            elif not data and step == 'agencies':
+                return
+            else:
+                processed = self.process_data( step, data )
+                self.save_data( step, processed )
+
+
+    def process_data( self, step, data ):
+        """ Generate a list of dicts """
+        if step == 'agencies':
+            return self.process_agc( data )
+        elif step == 'languages':
+            return self.process_lang_serv( self.languages, data )
+        elif step == 'services':
+            return self.process_lang_serv( self.services, data )
+        else:
+            self.errors += 'Unknown step [%s] in process_data' % step
+            return []
+
+
+    def process_lang_serv( self, storage, data ):
+        """ Populate self.services or self.languages """
+        for obj in data:
+            storage[obj['key']] = obj['value']
+        return storage
+
+
+    def process_agc( self, data ):
+        return data
+
+
+    def save_data( self, step, data ):
+        """ Save data to local db """
+        if not data:
+            return
+
+        if step == 'agencies':
+            self.save_agc( data )
+        elif step == 'languages':
+            self.save_lang_serv( step, data )
+        elif step == 'services':
+            self.save_lang_serv( step, data )
+        else:
+            self.errors += 'Unknown step [%s] in save_data' % step
+            return
+
+
+    def save_lang_serv( self, step, data ):
+        """ Save Languages or Services to local DB """
+        if step == 'services':
+            Service.objects.all().delete()
+            storage = self.services
+        elif step == 'languages':
+            Language.objects.all().delete()
+            storage = self.languages
+        else:
+            self.errors += 'Unknown step [%s] in save_lang_serv' % step
+            return
+
+        for item in storage:
+            self.insert_lang_serv( step, [item, storage[item]] )
+
+
+    def save_agc( self, data ):
+        """ Save Counseling Agency to DB """
+        if data:
+            # delete from hud_api_replace_counselingagency
+            CounselingAgency.objects.all().delete()
+
+            # save each agency from data
+            for agency in data:
+                self.insert_agency( agency )
+
+
+    def load_from_local_db( self, step ):
+        if step == 'services':
+            storage = self.services
+            data = Service.objects.all()
+        elif step == 'languages':
+            storage = self.languages
+            data = Language.objects.all()
+        else:
+            self.errors += 'Unknown "step" [%s] in load_from_local_db' % step
+            return
+
+        for obj in data:
+            storage[obj.abbr] = obj.name
+
+
+    def hud_data( self, step ):
+        """ Accesses HUD to read languages, services or counseling agency data """
+        dc_lat = "38.8951"
+        dc_long = "-77.0367"
+        distance = "5000"
+        urls = {
+            'languages':'http://data.hud.gov/Housing_Counselor/getLanguages',
+            'services':'http://data.hud.gov/Housing_Counselor/getServices',
+            'agencies':"%s?Lat=%s&Long=%s&Distance=%s" %
+                    ( 'http://data.hud.gov/Housing_Counselor/searchByLocation', dc_lat, dc_long, distance )
+        }
+
+        try:
+            response = urllib2.urlopen( urls[step] )
+            data = json.loads( response.read() )
+        except urllib2.URLError as e:
+            self.errors += 'Error when accessing HUD server: %s\n' % e.reason
+            return []
+
+        return data
 
 
     # Shamelessly copied most of hud-api-proxy.php
@@ -35,12 +153,6 @@ class Command( BaseCommand ):
 
 
     def translate_languages( self, string ):
-        languages = {
-            " ":" ", "ASL":"ASL", "ARA":"Arabic", "CAM":"Cambodian", "CAN":"Cantonese", "CHI":"Chinese Mandarin",
-            "CRE":"Creole", "CZE":"Czech", "ENG":"English", "FAR":"Farsi", "FRE":"French", "GER":"German",
-            "HIN":"Hindi", "HMO":"Hmong", "IND":"Indonesian", "ITA":"Italian", "KOR":"Korean", "OTH":"Other",
-            "POL":"Polish", "POR":"Portuguese", "RUS":"Russian", "SPA":"Spanish", "SWA":"Swahili", "TUR":"Turkish",
-            "UKR":"Ukrainian", "VIE":"Vietnamese"}
         langs = string.split(',')
         verbose_languages = ''
         prepend = ''
@@ -49,7 +161,7 @@ class Command( BaseCommand ):
             if lang == 'OTH':
                 other = ', Other'
             else:
-                verbose_languages += prepend + languages.get(lang, lang)
+                verbose_languages += prepend + self.languages.get(lang, lang)
                 prepend = ', '
 
         verbose_languages += other
@@ -58,30 +170,11 @@ class Command( BaseCommand ):
 
 
     def translate_services( self, string ):
-        services = { " ":" ",
-            "FHW":"Fair Housing Pre-Purchase Education Workshops",
-            "FBC":"Financial Management/Budget Counseling",
-            "FBW":"Financial, Budgeting and Credit Repair Workshops",
-            "HIC":"Home Improvement and Rehabilitation Counseling",
-            "LM" :"Loss Mitigation",
-            "MOI":"Marketing and Outreach Initiatives",
-            "DRC":"Mobility and Relocation Counseling",
-            "DFC":"Mortgage Delinquency and Default Resolution Counseling",
-            "NDW":"Non-Delinquency Post Purchase Workshops",
-            "PPC":"Pre-purchase Counseling",
-            "PPW":"Pre-purchase Homebuyer Education Workshops",
-            "PLW":"Predatory Lending Education Workshops",
-            "RHC":"Rental Housing Counseling",
-            "RHW":"Rental Housing Workshops",
-            "DFW":"Resolving/Preventing Mortgage Delinquency Workshop",
-            "RMC":"Reverse Mortgage Counseling",
-            "HMC":"Services for Homeless Counseling",
-        }
         srv_list = string.split(',')
         verbose_services = ''
         prepend = ''
         for srv in srv_list:
-            verbose_services += prepend + services.get(srv, srv)
+            verbose_services += prepend + self.services.get(srv, srv)
             prepend = ', '
 
         if verbose_services == '':
@@ -128,6 +221,24 @@ class Command( BaseCommand ):
         agcy['email'] = self.reformat_email( agcy['email'] )
 
 
+    def insert_lang_serv( self, step, data ):
+        if step == 'services':
+            obj = Service()
+        elif step == 'languages':
+            obj = Language()
+        else:
+            self.errors += 'Unknown step [%s] in insert_lang_serv' % step
+            return
+
+        obj.abbr = data[0]
+        obj.name = data[1]
+        try:
+            obj.save()
+        except Exception as e:
+            self.errors += 'Error while saving %s [%s]: %s\n' % ( step, obj.name, e )
+            return
+
+
     def insert_agency( self, agcy ):
         self.sanitize_values( agcy )
 
@@ -169,26 +280,3 @@ class Command( BaseCommand ):
             # email somebody about the error
             self.errors += 'Error while saving agency [%s]: %s\n' % ( obj.nme, e )
             return
-
-
-    def load_hud_data( self ):
-        # get data from HUD or show error message
-        hud_api_url = "http://data.hud.gov/Housing_Counselor/searchByLocation"
-        dc_lat = "38.8951"
-        dc_long = "-77.0367"
-        distance = "5000"
-
-        try:
-            response = urllib2.urlopen( "%s?Lat=%s&Long=%s&Distance=%s" % ( hud_api_url, dc_lat, dc_long, distance ) )
-            data = json.loads( response.read() )
-        except URLException as e:
-            self.errors += 'Error when accessing HUD server: %s\n' % e.reason 
-
-        # delete from hud_api_replace_counselingagency
-        CounselingAgency.objects.all().delete()
-
-        # insert into it or show error message
-        for agency in data:
-            self.insert_agency( agency )
-
-        return
