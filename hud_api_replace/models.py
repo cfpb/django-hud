@@ -43,3 +43,18 @@ class CounselingAgency( models.Model ):
     def __unicode__( self ):
         return self.nme
 
+
+class Language( models.Model ):
+    abbr = models.CharField( max_length = 5, unique = True )
+    name = models.CharField( max_length = 20 )
+
+    def __unicode__( self ):
+        return self.name
+
+
+class Service( models.Model ):
+    abbr = models.CharField( max_length = 5, unique = True )
+    name = models.CharField( max_length = 100 )
+
+    def __unicode__( self ):
+        return self.name
