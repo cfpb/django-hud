@@ -12,7 +12,8 @@ class Command( BaseCommand ):
     args = ''
     help = 'Loads data from HUD into local hud_api_replace_counselingagency table.'
     errors = ''
-    notify_emails = [ 'test3@example.com' ]
+    notify_emails = [ 'test3@example.com', 'test3@example.com',
+            'test1@example.com', 'test2@example.com']
     languages = {}
     services = {}
 
