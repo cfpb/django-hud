@@ -142,9 +142,11 @@ class Command( BaseCommand ):
 
     # Shamelessly copied most of hud-api-proxy.php
     def title_case( self, string ):
-        string.lower()
+        string = string.lower()
         str_list = string.split(' ')
         lower_case = ['a', 'an', 'and', 'as', 'at', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'with']
+        # First word has to be capitalized no matter what
+        str_list[0] = str_list[0].title()
         for ndx, word in enumerate(str_list):
             if word not in lower_case:
                 str_list[ndx] = word.title()
@@ -158,13 +160,14 @@ class Command( BaseCommand ):
         prepend = ''
         other = ''
         for lang in langs:
+            lang = lang.strip()
             if lang == 'OTH':
-                other = ', Other'
+                other = 'Other'
             else:
                 verbose_languages += prepend + self.languages.get(lang, lang)
                 prepend = ', '
-
-        verbose_languages += other
+        if other:
+            verbose_languages += prepend + other
 
         return verbose_languages
 
@@ -174,6 +177,7 @@ class Command( BaseCommand ):
         verbose_services = ''
         prepend = ''
         for srv in srv_list:
+            srv = srv.strip()
             verbose_services += prepend + self.services.get(srv, srv)
             prepend = ', '
 
@@ -197,7 +201,7 @@ class Command( BaseCommand ):
 
     def reformat_email( self, string ):
         string = string.strip()
-        if string.find('.') == -1 or string.find('@') == -1:
+        if string.find('.') == -1 or string.count('@') != 1:
             return 'Not available'
 
         return string
