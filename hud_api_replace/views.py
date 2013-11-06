@@ -1,4 +1,4 @@
-# Create your views here.
+from django.conf import settings
 from django.http import HttpResponse
 from django.template import RequestContext, loader
 from django.db import connection, transaction
@@ -8,7 +8,6 @@ import json
 import urllib2
 import urllib, urlparse
 import hmac, base64, hashlib
-import os
 # need to pip install dstk first
 #import dstk
 
@@ -29,8 +28,8 @@ def google_maps_api( zipcode ):
     address = zipcode
     url = "http://maps.googleapis.com/maps/api/geocode/json?address=%s&sensor=false" % address
     try:
-        privateKey = os.environ['GOOGLE_MAPS_API_PRIVATE_KEY']
-        clientID = os.environ['GOOGLE_MAPS_API_CLIENT_ID']
+        privateKey = settings.GOOGLE_MAPS_API_PRIVATE_KEY
+        clientID = settings.GOOGLE_MAPS_API_CLIENT_ID
         url += '&client=' + clientID
         url = signed_url( url, privateKey )
         response = urllib2.urlopen( url )
