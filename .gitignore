@@ -1,0 +1,15 @@
+*.py[co]
+.project
+.pydevproject
+*~
+*.db
+*.orig
+*.DS_Store
+.coverage
+.tox
+*.egg-info/*
+docs/_build/*
+dist/*
+
+example_project/dev.*
+example_project/whoosh_index
