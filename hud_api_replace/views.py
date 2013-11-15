@@ -1,73 +1,22 @@
-from django.conf import settings
 from django.http import HttpResponse
 from django.template import RequestContext, loader
 from django.db import connection, transaction
 
+from hud_api_replace.geocode import GeoCode
+
 import csv
 import json
-import urllib2
-import urllib, urlparse
-import hmac, base64, hashlib
-# need to pip install dstk first
-#import dstk
 
 from .models import CounselingAgency
-
-def signed_url( url, privateKey ):
-    """ Google Maps API requires signature parameter, this function generates it and returns the new url
-    see example on https://developers.google.com/maps/documentation/business/webservices/auth """
-    parsed = urlparse.urlparse( url )
-    urlToSign = parsed.path + "?" + parsed.query
-    decodedKey = base64.urlsafe_b64decode( privateKey )
-    signature = hmac.new( decodedKey, urlToSign, hashlib.sha1 )
-    encodedSignature = base64.urlsafe_b64encode( signature.digest() )
-    return url + '&signature=' + encodedSignature
-
-def google_maps_api( zipcode ):
-    """ Google API """
-    address = zipcode
-    url = "http://maps.googleapis.com/maps/api/geocode/json?address=%s&sensor=false" % address
-    try:
-        privateKey = settings.GOOGLE_MAPS_API_PRIVATE_KEY
-        clientID = settings.GOOGLE_MAPS_API_CLIENT_ID
-        url += '&client=' + clientID
-        url = signed_url( url, privateKey )
-        response = urllib2.urlopen( url )
-        jsongeocode = json.loads( response.read() )
-        if jsongeocode['results'][0]['geometry']:
-            lat = jsongeocode['results'][0]['geometry']['location']['lat']
-            lng = jsongeocode['results'][0]['geometry']['location']['lng']
-            return { 'zip': {
-                'zipcode': zipcode,
-                'lat': lat,
-                'lng': lng,
-            }}
-    except KeyError:
-        return {'error': 'Environmental variables GOOGLE_MAPS_API_PRIVATE_KEY and GOOGLE_MAPS_API_CLIENT_ID must be set'}
-    except:
-        return {'error': 'Error while getting geocoding information for ' + zipcode}
-
-
-def dstk_api( zipcode ):
-    # dstk = dstk.DSTK( {'apiBase': 'http://dstk.address.com'} )
-    # or set DSTK_API_BASE env variable
-    # by default connects to http://datasciencetoolkit.org
-    dst = dstk.DSTK()
-    address = zipcode + ', US'
-    data = dst.street2coordinates( [address] )
-    if isinstance( data[address], dict ):
-        return { 'zip': {
-            'zipcode': zipcode,
-            'lat': data[address]['latitude'],
-            'lng': data[address]['longitude'],
-        }}
-    else:
-        return {'error': 'Error while getting geocoding information for ' + zipcode}
 
 
 def geocode_zip( zipcode ):
     # use google api or dstk
-    return google_maps_api( zipcode )
+    try:
+        geocode = GeoCode( zipcode )
+        return geocode.google_maps_api()
+    except:
+        return {'error': 'Error while getting geocoding information for ' + zipcode}
     #return dstk_api( zipcode )
 
 
