@@ -180,7 +180,7 @@ class Command( BaseCommand ):
         prepend = ''
         for srv in srv_list:
             srv = srv.strip()
-            verbose_services += prepend + self.services.get(srv, srv)
+            verbose_services += prepend + self.services.get(srv, srv).replace(',', '&#44;')
             prepend = ', '
 
         if verbose_services == '':
