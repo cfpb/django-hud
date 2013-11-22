@@ -13,16 +13,17 @@ class GeoCode( object ):
        self.privateKey = settings.GOOGLE_MAPS_API_PRIVATE_KEY
        self.clientID = settings.GOOGLE_MAPS_API_CLIENT_ID
 
-    def is_usa_or_territory( formatted_address ):
+    def is_usa_or_territory( self, formatted_address ):
         import re
         territories = [
             'guam',             # Guam
             'usvi',             # US Virgin Islands
             'american samoa',   # American Samoa
             'puerto rico',      # Puerto Rico
+            'usa',
         ]
         joined = '|'.join( territories )
-        return re.search( joined, formatted_address.lower() )       
+        return re.search( joined, formatted_address.lower() )
 
 
     def signed_url( self, url ):
@@ -46,20 +47,20 @@ class GeoCode( object ):
             response = urllib2.urlopen( url )
             jsongeocode = json.loads( response.read() )
             for result in jsongeocode['results']:
-                if 'postal_code' in result['types'] and is_usa_or_territory(result['formatted_address']):
+                if 'postal_code' in result['types'] and self.is_usa_or_territory(result['formatted_address']):
                     if result['geometry']:
                         lat = result['geometry']['location']['lat']
                         lng = result['geometry']['location']['lng']
                         return { 'zip': {
-                            'zipcode': zipcode,
+                            'zipcode': self.zipcode,
                             'lat': lat,
                             'lng': lng,
                         }}
-        except KeyError as e: 
+        except KeyError as e:
             return {'error': 'Environmental variables GOOGLE_MAPS_API_PRIVATE_KEY and GOOGLE_MAPS_API_CLIENT_ID must be set'}
         except:
             return {'error': 'Error while getting geocoding information for ' + self.zipcode}
-        return {'error': 'No data was returned from Google'} 
+        return {'error': 'No data was returned from Google'}
 
 
     def dstk_api( self ):
