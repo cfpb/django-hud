@@ -9,7 +9,6 @@ import json
 
 from .models import CounselingAgency
 
-
 def geocode_zip( zipcode ):
     # use google api or dstk
     try:
