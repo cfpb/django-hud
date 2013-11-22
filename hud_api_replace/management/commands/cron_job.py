@@ -6,6 +6,7 @@ import json
 import re
 
 from hud_api_replace.models import CounselingAgency, Language, Service
+from hud_api_replace.geocode import GeoCode
 
 
 class Command( BaseCommand ):
@@ -20,7 +21,7 @@ class Command( BaseCommand ):
     def handle( self, *args, **options ):
         self.load_hud_data()
         if self.errors != '':
-            email = EmailMessage('Errors while loading HUD data', self.errors, to = notify_emails)
+            email = EmailMessage('Errors while loading HUD data', self.errors, to = self.notify_emails)
             email.send()
         self.stdout.write('HUD data has been loaded.')
 
@@ -179,7 +180,7 @@ class Command( BaseCommand ):
         prepend = ''
         for srv in srv_list:
             srv = srv.strip()
-            verbose_services += prepend + self.services.get(srv, srv)
+            verbose_services += prepend + self.services.get(srv, srv).replace(',', '&#44;')
             prepend = ', '
 
         if verbose_services == '':
@@ -224,6 +225,13 @@ class Command( BaseCommand ):
 
         agcy['weburl'] = self.reformat_weburl( agcy['weburl'] )
         agcy['email'] = self.reformat_email( agcy['email'] )
+
+        if agcy['agc_ADDR_LATITUDE'] == '' or agcy['agc_ADDR_LATITUDE'] == None:
+            agcy['agc_ADDR_LATITUDE'] = '0'
+
+        if agcy['agc_ADDR_LONGITUDE'] == '' or agcy['agc_ADDR_LONGITUDE'] == None:
+            agcy['agc_ADDR_LONGITUDE'] = '0'
+
 
 
     def insert_lang_serv( self, step, data ):
@@ -279,7 +287,17 @@ class Command( BaseCommand ):
         obj.agc_STATUS = agcy.get('agc_STATUS', '')
         obj.agc_SRC_CD = agcy.get('agc_SRC_CD', '')
         obj.counslg_METHOD = agcy.get('counslg_METHOD', '')
+
         try:
+            # check that lat/long is not 0
+            if obj.agc_ADDR_LATITUDE == '0' or obj.agc_ADDR_LONGITUDE == '0':
+                geocode = GeoCode( obj.zipcd[:5] )
+                geocode_data = geocode.google_maps_api()
+                if 'zip' in geocode_data:
+                    obj.agc_ADDR_LATITUDE = geocode_data['zip']['lat']
+                    obj.agc_ADDR_LONGITUDE = geocode_data['zip']['lng']
+                else:
+                    raise Exception('Could not obtain geocoding information for zipcode [%s]' % obj.zipcd)
             obj.save()
         except Exception as e:
             # email somebody about the error
