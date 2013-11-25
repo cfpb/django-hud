@@ -15,11 +15,15 @@ class GeoCode( object ):
 
     def is_usa_or_territory( self, formatted_address ):
         import re
+        # a somewhat full list of territories and zip codes
+        # http://en.m.18dao.net/ZIP_Code/United_States_External_Territories
         territories = [
             'guam',             # Guam
             'usvi',             # US Virgin Islands
             'american samoa',   # American Samoa
             'puerto rico',      # Puerto Rico
+            'cnmi',             # North Mariana Islands
+            'rmi',              # Marshall Islands
             'usa',
         ]
         joined = '|'.join( territories )
