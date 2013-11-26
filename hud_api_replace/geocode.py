@@ -9,9 +9,35 @@ import hmac, base64, hashlib
 class GeoCode( object ):
 
     def __init__( self, zipcode ):
-       self.zipcode = zipcode
-       self.privateKey = settings.GOOGLE_MAPS_API_PRIVATE_KEY
-       self.clientID = settings.GOOGLE_MAPS_API_CLIENT_ID
+        self.zipcode = zipcode
+        self.privateKey = settings.GOOGLE_MAPS_API_PRIVATE_KEY
+        self.clientID = settings.GOOGLE_MAPS_API_CLIENT_ID
+        # Google doesn't return any information for some postal codes for US Territories in the Pacific,
+        #  we'll get geocoding info for other postal codes which are located relatively close to the original
+        #  ones.
+        self.invisible_zipcodes = {
+            # Federated States of Micronesia
+            '96941' : 96960,
+            '96942' : 96960,
+            '96943' : 96960,
+            '96944' : 96960,
+            # Marshall Islands
+            '96970' : 96960,
+            # North Mariana Islands
+            '96950' : 96951,
+            '96950' : 96952,
+            # Palau
+            '96940' : 96910,
+            # Guam
+            '96912' : 96910,
+            '96916' : 96915,
+            '96917' : 96915,
+            '96921' : 96919,
+            '96923' : 96919,
+            '96928' : 96929,
+            '96931' : 96929,
+            '96932' : 96929,
+        }
 
     def is_usa_or_territory( self, formatted_address ):
         import re
@@ -41,15 +67,20 @@ class GeoCode( object ):
         return url + '&signature=' + encodedSignature
 
 
+    def request_google_maps( self, zipcode ):
+        url = "http://maps.googleapis.com/maps/api/geocode/json?address=%s&sensor=false" % zipcode
+        url += '&client=' + self.clientID
+        url = self.signed_url( url )
+        response = urllib2.urlopen( url )
+        return json.loads( response.read() )
+
+
     def google_maps_api( self ):
         """ Google API """
-        address = self.zipcode
-        url = "http://maps.googleapis.com/maps/api/geocode/json?address=%s&sensor=false" % address
         try:
-            url += '&client=' + self.clientID
-            url = self.signed_url( url )
-            response = urllib2.urlopen( url )
-            jsongeocode = json.loads( response.read() )
+            jsongeocode = self.request_google_maps( self.zipcode )
+            if jsongeocode['status'] == 'ZERO_RESULTS' and self.zipcode in self.invisible_zipcodes:
+                jsongeocode = self.request_google_maps( self.invisible_zipcodes[ self.zipcode ] )
             for result in jsongeocode['results']:
                 if 'postal_code' in result['types'] and self.is_usa_or_territory(result['formatted_address']):
                     if result['geometry']:
