@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.core.mail import EmailMessage
+from django.conf import settings
 
 import urllib2
 import json
@@ -10,11 +11,9 @@ from hud_api_replace.geocode import GeoCode
 
 
 class Command( BaseCommand ):
-    args = ''
     help = 'Loads data from HUD into local hud_api_replace_counselingagency table.'
     errors = ''
-    notify_emails = [ 'test3@example.com', 'test3@example.com',
-            'test1@example.com', 'test2@example.com']
+    notify_emails = settings.DJANGO_HUD_NOTIFY_EMAILS.split(',')
     languages = {}
     services = {}
 
