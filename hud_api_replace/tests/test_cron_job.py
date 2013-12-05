@@ -141,11 +141,11 @@ class TestCronJob( TestCase ):
 
 
 # ---------- sanitize_values ----------
-    def test_sanitize_values_1( self ):
-        agc = {'key':None, 'nme':'', 'city':'', 'mailingcity':'',
-            'languages':'', 'services':'', 'weburl':'', 'email':''}
-        self.cmd.sanitize_values( agc )
-        self.assertEqual( agc['key'], '')
+    # def test_sanitize_values_1( self ):
+    #     agc = {'key':None, 'nme':'', 'city':'', 'mailingcity':'',
+    #         'languages':'', 'services':'', 'weburl':'', 'email':''}
+    #     self.cmd.sanitize_values( agc )
+    #     self.assertEqual( agc['key'], '')
 
 # ---------- process_lang_serv ----------
     def test_process_lang_serv_1( self ):
