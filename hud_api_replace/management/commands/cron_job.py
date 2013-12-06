@@ -12,150 +12,183 @@ from hud_api_replace.geocode import GeoCode
 
 class Command( BaseCommand ):
     help = 'Loads data from HUD into local hud_api_replace_counselingagency table.'
-    errors = ''
+    # expect emails be a comma-separated list
     notify_emails = settings.DJANGO_HUD_NOTIFY_EMAILS.split(',')
+    errors = ''
     languages = {}
     services = {}
+    counselors = {}
 
-    def handle( self, *args, **options ):
-        self.load_hud_data()
+
+    def handle(self, *args, **options):
+        self.languages = self.convert2normal(self.hud_data('languages'))
+        self.services = self.convert2normal(self.hud_data('services'))
+        self.load_local_data()
+        self.counselors = self.hud_data('counselors')
+        self.save_data()
         if self.errors != '':
             email = EmailMessage('Errors while loading HUD data', self.errors, to = self.notify_emails)
             email.send()
         self.stdout.write('HUD data has been loaded.')
 
 
-    def load_hud_data( self ):
-        for step in ['languages', 'services', 'agencies']:
-            data = self.hud_data( step )
-            if not data and step != 'agencies':
-                self.load_from_local_db( step )
-            elif not data and step == 'agencies':
-                return
-            else:
-                processed = self.process_data( step, data )
-                self.save_data( step, processed )
-
-
-    def process_data( self, step, data ):
-        """ Generate a list of dicts """
-        if step == 'agencies':
-            return self.process_agc( data )
-        elif step == 'languages':
-            return self.process_lang_serv( self.languages, data )
-        elif step == 'services':
-            return self.process_lang_serv( self.services, data )
-        else:
-            self.errors += 'Unknown step [%s] in process_data' % step
-            return []
-
-
-    def process_lang_serv( self, storage, data ):
-        """ Populate self.services or self.languages """
-        for obj in data:
-            storage[obj['key']] = obj['value']
-        return storage
-
-
-    def process_agc( self, data ):
-        return data
-
-
-    def save_data( self, step, data ):
-        """ Save data to local db """
-        if not data:
-            return
-
-        if step == 'agencies':
-            self.save_agc( data )
-        elif step == 'languages':
-            self.save_lang_serv( step, data )
-        elif step == 'services':
-            self.save_lang_serv( step, data )
-        else:
-            self.errors += 'Unknown step [%s] in save_data' % step
-            return
-
-
-    def save_lang_serv( self, step, data ):
-        """ Save Languages or Services to local DB """
-        if step == 'services':
-            Service.objects.all().delete()
-            storage = self.services
-        elif step == 'languages':
-            Language.objects.all().delete()
-            storage = self.languages
-        else:
-            self.errors += 'Unknown step [%s] in save_lang_serv' % step
-            return
-
-        for item in storage:
-            self.insert_lang_serv( step, [item, storage[item]] )
-
-
-    def save_agc( self, data ):
-        """ Save Counseling Agency to DB """
-        if data:
-            # delete from hud_api_replace_counselingagency
-            CounselingAgency.objects.all().delete()
-
-            # save each agency from data
-            for agency in data:
-                self.insert_agency( agency )
-
-
-    def load_from_local_db( self, step ):
-        if step == 'services':
-            storage = self.services
-            data = Service.objects.all()
-        elif step == 'languages':
-            storage = self.languages
-            data = Language.objects.all()
-        else:
-            self.errors += 'Unknown "step" [%s] in load_from_local_db' % step
-            return
-
-        for obj in data:
-            storage[obj.abbr] = obj.name
-
-
-    def hud_data( self, step ):
-        """ Accesses HUD to read languages, services or counseling agency data """
+    def hud_data(self, step):
+        """ Accesses HUD to get languages, services or counseling agency data """
         dc_lat = "38.8951"
         dc_long = "-77.0367"
         distance = "5000"
         urls = {
             'languages':'http://data.hud.gov/Housing_Counselor/getLanguages',
             'services':'http://data.hud.gov/Housing_Counselor/getServices',
-            'agencies':"%s?Lat=%s&Long=%s&Distance=%s" %
+            'counselors':"%s?Lat=%s&Long=%s&Distance=%s" %
                     ( 'http://data.hud.gov/Housing_Counselor/searchByLocation', dc_lat, dc_long, distance )
         }
 
         try:
             response = urllib2.urlopen( urls[step] )
-            data = json.loads( response.read() )
+            return json.loads( response.read() )
         except urllib2.URLError as e:
             self.errors += 'Error when accessing HUD server: %s\n' % e.reason
             return []
 
-        return data
+
+    def convert2normal(self, storage):
+        """ Populate self.services or self.languages """
+        if storage:
+            data = {}
+            for obj in storage:
+                data[obj['key']] = obj['value']
+            return data
+        return {}
+
+
+    def save_data(self):
+        if self.services:
+            Service.objects.all().delete()
+            for item in self.services:
+                self.insert_lang_serv(Service(), [item, self.services[item]])
+        if self.languages:
+            Language.objects.all().delete()
+            for item in self.languages:
+                self.insert_lang_serv(Language(), [item, self.languages[item]])
+        if self.counselors:
+            for item in self.counselors:
+                self.insert_counselor(item)
+        else:
+            self.errors += 'Error: there were no counselors to be saved'
+
+
+    def load_local_data(self):
+        if not self.languages:
+            self.languages = self.convert2normal(self.convert2hud(Language.objects.all()))
+        if not self.services:
+            self.services = self.convert2normal(self.convert2hud(Service.objects.all()))
+        return
+
+
+    def convert2hud(self, data):
+        transformed_data = []
+        for item in data:
+            transformed_data.append({'key':item.abbr,'value':item.name})
+        return transformed_data
+
+
+    def insert_lang_serv(self, type_obj, item):
+        type_obj.abbr = item[0]
+        type_obj.name = item[1]
+        try:
+            type_obj.save()
+        except Exception as e:
+            self.errors += 'Error while saving [%s]: %s\n' % (item[1], e)
+
+
+    def insert_counselor(self, counselor):
+        self.sanitize_values(counselor)
+
+        obj = CounselingAgency()
+        obj.agcid = counselor.get('agcid', '')
+        obj.adr1 = counselor.get('adr1', '')
+        obj.adr2 = counselor.get('adr2', '')
+        obj.city = counselor.get('city', '')
+        obj.email = counselor.get('email', '')
+        obj.fax = counselor.get('fax', '')
+        obj.nme = counselor.get('nme', '')
+        obj.phone1 = counselor.get('phone1', '')
+        obj.statecd = counselor.get('statecd', '')
+        obj.weburl = counselor.get('weburl', '')
+        obj.zipcd = counselor.get('zipcd', '')
+        obj.agc_ADDR_LATITUDE = counselor.get('agc_ADDR_LATITUDE', '')
+        obj.agc_ADDR_LONGITUDE = counselor.get('agc_ADDR_LONGITUDE', '')
+        obj.languages = counselor.get('languages', '')
+        obj.services = counselor.get('services', '')
+        obj.parentid = counselor.get('parentid', '')
+        obj.county_NME = counselor.get('county_NME', '')
+        obj.phone2 = counselor.get('phone2', '')
+        obj.mailingadr1 = counselor.get('mailingadr1', '')
+        obj.mailingadr2 = counselor.get('mailingadr2', '')
+        obj.mailingcity = counselor.get('mailingcity', '')
+        obj.mailingzipcd = counselor.get('mailingzipcd', '')
+        obj.mailingstatecd = counselor.get('mailingstatecd', '')
+        obj.state_NME = counselor.get('state_NME', '')
+        obj.state_FIPS_CODE = counselor.get('state_FIPS_CODE', '')
+        obj.faithbased = counselor.get('faithbased', '')
+        obj.colonias_IND = counselor.get('colonias_IND', '')
+        obj.migrantwkrs_IND = counselor.get('migrantwkrs_IND', '')
+        obj.agc_STATUS = counselor.get('agc_STATUS', '')
+        obj.agc_SRC_CD = counselor.get('agc_SRC_CD', '')
+        obj.counslg_METHOD = counselor.get('counslg_METHOD', '')
+
+        try:
+            if obj.agc_ADDR_LATITUDE == '0' or obj.agc_ADDR_LONGITUDE == '0':
+                geocode = GeoCode( obj.zipcd[:5] )
+                geocode_data = geocode.google_maps_api()
+                if 'zip' in geocode_data:
+                    obj.agc_ADDR_LATITUDE = geocode_data['zip']['lat']
+                    obj.agc_ADDR_LONGITUDE = geocode_data['zip']['lng']
+                else:
+                    raise Exception('Could not obtain geocoding information for zipcode [%s]' % obj.zipcd)
+            obj.save()
+        except Exception as e:
+            self.errors += 'Error while saving agency [%s]: %s\n' % ( obj.nme, e )
+
+
+    def sanitize_values(self, counselor):
+        # Change null values to ''
+        # Apply proper letter case
+        for key in counselor.keys():
+            if counselor[key] == None:
+                counselor[key] = ''
+
+        counselor['nme'] = self.title_case( counselor['nme'] )
+        counselor['city'] = self.title_case( counselor['city'] )
+        counselor['mailingcity'] = self.title_case( counselor['mailingcity'] )
+
+        counselor['languages'] = self.translate_languages( counselor['languages'] )
+        counselor['services'] = self.translate_services( counselor['services'] )
+
+        counselor['weburl'] = self.reformat_weburl( counselor['weburl'] )
+        counselor['email'] = self.reformat_email( counselor['email'] )
+
+        if counselor['agc_ADDR_LATITUDE'] == '' or counselor['agc_ADDR_LATITUDE'] == None:
+            counselor['agc_ADDR_LATITUDE'] = '0'
+
+        if counselor['agc_ADDR_LONGITUDE'] == '' or counselor['agc_ADDR_LONGITUDE'] == None:
+            counselor['agc_ADDR_LONGITUDE'] = '0'
 
 
     # Shamelessly copied most of hud-api-proxy.php
-    def title_case( self, string ):
+    def title_case(self, string):
         string = string.lower()
         str_list = string.split(' ')
         lower_case = ['a', 'an', 'and', 'as', 'at', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'with']
-        # First word has to be capitalized no matter what
         str_list[0] = str_list[0].title()
         for ndx, word in enumerate(str_list):
             if word not in lower_case:
                 str_list[ndx] = word.title()
-
         return ' '.join(str_list)
 
 
-    def translate_languages( self, string ):
+    def translate_languages(self, string):
         langs = string.split(',')
         verbose_languages = ''
         prepend = ''
@@ -169,11 +202,10 @@ class Command( BaseCommand ):
                 prepend = ', '
         if other:
             verbose_languages += prepend + other
-
         return verbose_languages
 
 
-    def translate_services( self, string ):
+    def translate_services(self, string):
         srv_list = string.split(',')
         verbose_services = ''
         prepend = ''
@@ -184,11 +216,10 @@ class Command( BaseCommand ):
 
         if verbose_services == '':
             verbose_services = 'Not available'
-
         return verbose_services
 
 
-    def reformat_weburl( self, string ):
+    def reformat_weburl(self, string):
         string = string.strip()
         if string.find('.') == -1 or string.find('notavailable') != -1:
             return 'Not available'
@@ -196,109 +227,11 @@ class Command( BaseCommand ):
             match = re.match(r'^http(s)?://', string)
             if not match:
                 return 'http://' + string
-
         return string
 
 
-    def reformat_email( self, string ):
+    def reformat_email(self, string):
         string = string.strip()
         if string.find('.') == -1 or string.count('@') != 1:
             return 'Not available'
-
         return string
-
-
-    def sanitize_values( self, agcy ):
-        # Change null values to ''
-        # Apply proper letter case
-        for key in agcy.keys():
-            if agcy[key] == None:
-                agcy[key] = ''
-
-        agcy['nme'] = self.title_case( agcy['nme'] )
-        agcy['city'] = self.title_case( agcy['city'] )
-        agcy['mailingcity'] = self.title_case( agcy['mailingcity'] )
-
-        agcy['languages'] = self.translate_languages( agcy['languages'] )
-        agcy['services'] = self.translate_services( agcy['services'] )
-
-        agcy['weburl'] = self.reformat_weburl( agcy['weburl'] )
-        agcy['email'] = self.reformat_email( agcy['email'] )
-
-        if agcy['agc_ADDR_LATITUDE'] == '' or agcy['agc_ADDR_LATITUDE'] == None:
-            agcy['agc_ADDR_LATITUDE'] = '0'
-
-        if agcy['agc_ADDR_LONGITUDE'] == '' or agcy['agc_ADDR_LONGITUDE'] == None:
-            agcy['agc_ADDR_LONGITUDE'] = '0'
-
-
-
-    def insert_lang_serv( self, step, data ):
-        if step == 'services':
-            obj = Service()
-        elif step == 'languages':
-            obj = Language()
-        else:
-            self.errors += 'Unknown step [%s] in insert_lang_serv' % step
-            return
-
-        obj.abbr = data[0]
-        obj.name = data[1]
-        try:
-            obj.save()
-        except Exception as e:
-            self.errors += 'Error while saving %s [%s]: %s\n' % ( step, obj.name, e )
-            return
-
-
-    def insert_agency( self, agcy ):
-        self.sanitize_values( agcy )
-
-        obj = CounselingAgency()
-        obj.agcid = agcy.get('agcid', '')
-        obj.adr1 = agcy.get('adr1', '')
-        obj.adr2 = agcy.get('adr2', '')
-        obj.city = agcy.get('city', '')
-        obj.email = agcy.get('email', '')
-        obj.fax = agcy.get('fax', '')
-        obj.nme = agcy.get('nme', '')
-        obj.phone1 = agcy.get('phone1', '')
-        obj.statecd = agcy.get('statecd', '')
-        obj.weburl = agcy.get('weburl', '')
-        obj.zipcd = agcy.get('zipcd', '')
-        obj.agc_ADDR_LATITUDE = agcy.get('agc_ADDR_LATITUDE', '')
-        obj.agc_ADDR_LONGITUDE = agcy.get('agc_ADDR_LONGITUDE', '')
-        obj.languages = agcy.get('languages', '')
-        obj.services = agcy.get('services', '')
-        obj.parentid = agcy.get('parentid', '')
-        obj.county_NME = agcy.get('county_NME', '')
-        obj.phone2 = agcy.get('phone2', '')
-        obj.mailingadr1 = agcy.get('mailingadr1', '')
-        obj.mailingadr2 = agcy.get('mailingadr2', '')
-        obj.mailingcity = agcy.get('mailingcity', '')
-        obj.mailingzipcd = agcy.get('mailingzipcd', '')
-        obj.mailingstatecd = agcy.get('mailingstatecd', '')
-        obj.state_NME = agcy.get('state_NME', '')
-        obj.state_FIPS_CODE = agcy.get('state_FIPS_CODE', '')
-        obj.faithbased = agcy.get('faithbased', '')
-        obj.colonias_IND = agcy.get('colonias_IND', '')
-        obj.migrantwkrs_IND = agcy.get('migrantwkrs_IND', '')
-        obj.agc_STATUS = agcy.get('agc_STATUS', '')
-        obj.agc_SRC_CD = agcy.get('agc_SRC_CD', '')
-        obj.counslg_METHOD = agcy.get('counslg_METHOD', '')
-
-        try:
-            # check that lat/long is not 0
-            if obj.agc_ADDR_LATITUDE == '0' or obj.agc_ADDR_LONGITUDE == '0':
-                geocode = GeoCode( obj.zipcd[:5] )
-                geocode_data = geocode.google_maps_api()
-                if 'zip' in geocode_data:
-                    obj.agc_ADDR_LATITUDE = geocode_data['zip']['lat']
-                    obj.agc_ADDR_LONGITUDE = geocode_data['zip']['lng']
-                else:
-                    raise Exception('Could not obtain geocoding information for zipcode [%s]' % obj.zipcd)
-            obj.save()
-        except Exception as e:
-            # email somebody about the error
-            self.errors += 'Error while saving agency [%s]: %s\n' % ( obj.nme, e )
-            return
