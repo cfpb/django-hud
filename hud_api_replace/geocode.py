@@ -83,7 +83,7 @@ class GeoCode( object ):
             if jsongeocode['status'] == 'ZERO_RESULTS' and self.zipcode in self.invisible_zipcodes:
                 jsongeocode = self.request_google_maps( self.invisible_zipcodes[ self.zipcode ] )
             for result in jsongeocode['results']:
-                if 'postal_code' in result['types'] and self.is_usa_or_territory(result['formatted_address']):
+                if self.is_usa_or_territory(result['formatted_address']):
                     if result['geometry']:
                         lat = result['geometry']['location']['lat']
                         lng = result['geometry']['location']['lng']
