@@ -139,21 +139,3 @@ class TestCronJob( TestCase ):
         email = 'test@test@email.com'
         self.assertEqual( self.cmd.reformat_email( email ), 'Not available')
 
-
-# ---------- sanitize_values ----------
-    # def test_sanitize_values_1( self ):
-    #     agc = {'key':None, 'nme':'', 'city':'', 'mailingcity':'',
-    #         'languages':'', 'services':'', 'weburl':'', 'email':''}
-    #     self.cmd.sanitize_values( agc )
-    #     self.assertEqual( agc['key'], '')
-
-# ---------- process_lang_serv ----------
-    def test_process_lang_serv_1( self ):
-        data = [
-            { 'key': 'key1', 'value': 'value1'},
-            { 'key': 'key2', 'value': 'value2'},
-        ]
-        result = self.cmd.process_lang_serv( {}, data )
-        self.assertEqual( result['key1'], 'value1')
-        self.assertEqual( len(result), 2 )
-
