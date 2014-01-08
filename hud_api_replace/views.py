@@ -33,10 +33,19 @@ def return_fields( row ):
     return fields_values
 
 
+def get_request_variables( GET ):
+    variables = {}
+    variables['distance'] = int(GET.get( 'distance', '5000' ))
+    variables['limit'] = int(GET.get( 'limit', '10' ))
+    variables['offset'] = int(GET.get( 'offset', '0' )) * variables['limit']
+    variables['language'] = GET.get( 'language', '' )
+    variables['service'] = GET.get( 'service', '' )
+
+    return variables
+
+
 def get_counsel_list( zipcode, GET ):
-    distance = int(GET.get( 'distance', '5000' ))
-    limit = int(GET.get( 'limit', '10' ))
-    offset = int(GET.get( 'offset', '0' )) * limit
+    rvars = get_request_variables( GET )
 
     # geocoding to get zipcode lat/long
     data = geocode_zip( zipcode )
@@ -44,14 +53,30 @@ def get_counsel_list( zipcode, GET ):
         latitude = data['zip']['lat']
         longitude = data['zip']['lng']
 
+        where = ''
+        prepend = ' WHERE ('
+        if rvars['language'] != '':
+            for lang in rvars['language'].split(','):
+                where += '%s languages LIKE "%%%%%s%%%%" ' % (prepend, lang)
+                prepend = ' OR '
+            where += ') '
+            prepend = ' AND ('
+        if rvars['service'] != '':
+            for serv in rvars['service'].split(','):
+                where += '%s services LIKE "%%%%%s%%%%" ' % (prepend, rvars['service'])
+                prepend = ' OR '
+            where += ') '
+
         # from
         # http://stackoverflow.com/questions/1916953/filter-zipcodes-by-proximity-in-django-with-the-spherical-law-of-cosines
         eradius = 3959 # Earth radius in miles
         cursor = connection.cursor()
         sql = """SELECT *, (%f * acos( cos( radians(%f) ) * cos( radians( agc_ADDR_LATITUDE ) ) *
             cos( radians( agc_ADDR_LONGITUDE ) - radians(%f) ) + sin( radians(%f) ) * sin( radians( agc_ADDR_LATITUDE ) ) ) )
-            AS distance FROM hud_api_replace_counselingagency HAVING distance < %d
-            ORDER BY distance LIMIT %d OFFSET %d;""" % (eradius, latitude, longitude, latitude, distance, limit, offset)
+            AS distance FROM hud_api_replace_counselingagency %s HAVING distance < %d
+            ORDER BY distance LIMIT %d OFFSET %d;""" \
+            % (eradius, latitude, longitude, latitude, where, rvars['distance'], rvars['limit'], rvars['offset'])
+
         cursor.execute(sql)
         result = cursor.fetchall()
         data['counseling_agencies'] = [ return_fields( agc ) for agc in result ]
