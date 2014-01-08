@@ -72,6 +72,7 @@ class Command( BaseCommand ):
             for item in self.languages:
                 self.insert_lang_serv(Language(), [item, self.languages[item]])
         if self.counselors:
+            CounselingAgency.objects.all().delete()
             for item in self.counselors:
                 self.insert_counselor(item)
         else:
