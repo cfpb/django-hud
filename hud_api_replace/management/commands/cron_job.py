@@ -50,15 +50,22 @@ class Command( BaseCommand ):
         except urllib2.URLError as e:
             self.errors += 'Error when accessing HUD server: %s\n' % e.reason
             return []
+        except Exception as e:
+            self.errors += 'Exception raised: %s\n' % e
+            return []
 
 
     def convert2normal(self, storage):
         """ Populate self.services or self.languages """
         if storage:
             data = {}
-            for obj in storage:
-                data[obj['key']] = obj['value']
-            return data
+            try:
+                for obj in storage:
+                    data[obj['key']] = obj['value']
+                return data
+            except Exception as e:
+                self.errors += 'Exception raised: %s\n' % e
+                return {}
         return {}
 
 
@@ -88,21 +95,29 @@ class Command( BaseCommand ):
 
     def convert2hud(self, data):
         transformed_data = []
-        for item in data:
-            transformed_data.append({'key':item.abbr,'value':item.name})
+        try:
+            for item in data:
+                transformed_data.append({'key':item.abbr,'value':item.name})
+        except Exception:
+            return []
         return transformed_data
 
 
     def insert_lang_serv(self, type_obj, item):
-        type_obj.abbr = item[0]
-        type_obj.name = item[1]
         try:
+            type_obj.abbr = item[0]
+            type_obj.name = item[1]
             type_obj.save()
         except Exception as e:
-            self.errors += 'Error while saving [%s]: %s\n' % (item[1], e)
+            if item and item[1]:
+                self.errors += 'Error while saving [%s]: %s\n' % (item[1], e)
+            else:
+                self.errors += 'Error while saving'
 
 
     def insert_counselor(self, counselor):
+        if not counselor or counselor == {}:
+            return
         self.sanitize_values(counselor)
 
         obj = CounselingAgency()
