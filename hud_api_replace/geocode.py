@@ -60,6 +60,8 @@ class GeoCode( object ):
     def signed_url( self, url ):
         """ Google Maps API requires signature parameter, this function generates it and returns the new url
         see example on https://developers.google.com/maps/documentation/business/webservices/auth """
+        if not url or url == '':
+            return
         parsed = urlparse.urlparse( url )
         urlToSign = parsed.path + "?" + parsed.query
         decodedKey = base64.urlsafe_b64decode( self.privateKey )
