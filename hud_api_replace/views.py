@@ -103,9 +103,12 @@ def export_csv( request, zipcode ):
 
 
 def return_json( request, zipcode ):
-    response = HttpResponse(content_type='application/json')
-#    response['Content-Disposition'] = 'attachment; filename="' + zipcode + '.json"'
-    response = HttpResponse()
+    callback = request.GET.get('callback','')
     data = get_counsel_list( zipcode, request.GET )
-    response.write( json.dumps( data ) )
+    if callback == '':
+        response = HttpResponse(content_type='application/json')
+        response.write( json.dumps( data ) )
+    else:
+        response = HttpResponse(content_type='application/javascript')
+        response.write( '%s(%s)' % (callback, json.dumps(data) ) )
     return response
