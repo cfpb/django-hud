@@ -1,19 +1,26 @@
-This represents a django project to replace HUD API.
+This is a django project that provides a very basic API on top of [HUD Housing Counseling](http://portal.hud.gov/hudportal/HUD?src=/program_offices/housing/sfh/hcc)
+ data.
 
 ### Environmental variable GOOGLE_MAPS_API_PRIVATE_KEY must be set.
 
 ### Environmental variable GOOGLE_MAPS_API_CLIENT_ID must be set.
 
+### Environmental variable DJANGO_HUD_NOTIFY_EMAILS must be set.
+
 ## hud_api_replace
 
-This module is used to return a list of HUD-approved agencies sorted ascending by distance from a given zipcode. It
-returns data in `json` or `csv` format. Additionally, `distance`, `limit` and `offset` patameters are allowed.
+This module creates a basic API that returns a list of HUD-approved agencies near a given zipcode sorted by
+distance in ascending order. Data returned can be in `json` or `csv` format. The API accepts `distance`, `limit`,
+`offset`, `language` and `service` parameters.
 
-Default value for format is `json`, for `distance` is 5000, for `limit` is 10, and for `offset` is 0.
+# Default values:
+
+For format is `json`, for `distance` is 5000, for `limit` is 10, and for `offset` is 0. `language` and `service`
+have no default values.
 
 The API can be accessed from `hud-api-replace/:zipcode` address.
 
-Examples:
+# Examples:
 
 Return 10 closest to 20005 agencies, formatted as `json`:
 
