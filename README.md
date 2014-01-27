@@ -39,7 +39,68 @@ formatted as `json`:
 
 `hud-api-replace/20005?limit=5&offset=1&distance=100`
 
+Get the list of agencies that speak English *OR* Korean:
+
+`hud-api-replace/20005?language=eng,kor`
+
+Get list of agencies that provide [Mortgage Delinquency and Default Resolution Counse] and [Financial, Budgeting
+and Credit Repair Workshops] services:
+
+`20005/?service=dfc,fbw`
+
+## Service Abbreviations:
+
+| abbr | name                                               |
+|:---- |:-------------------------------------------------- |
+| DRC  | Mobility and Relocation Counseling                 |
+| FHW  | Fair Housing Pre-Purchase Education Workshops      |
+| NDW  | Non-Delinquency Post Purchase Workshops            |
+| PPW  | Pre-purchase Homebuyer Education Workshops         |
+| MOI  | Marketing and Outreach Initiatives                 |
+| HIC  | Home Improvement and Rehabilitation Counseling     |
+| PLW  | Predatory Lending Education Workshops              |
+| FBC  | Financial Management/Budget Counseling             |
+| RHW  | Rental Housing Workshops                           |
+| LM   | Loss Mitigation                                    |
+| DFW  | Resolving/Preventing Mortgage Delinquency Workshop |
+| RMC  | Reverse Mortgage Counseling                        |
+| RHC  | Rental Housing Counseling                          |
+| FBW  | Financial, Budgeting and Credit Repair Workshops   |
+| PPC  | Pre-purchase Counseling                            |
+| DFC  | Mortgage Delinquency and Default Resolution Counse |
+| HMC  | Services for Homeless Counseling                   |
+
+## Language Abbreviations:
+
+| abbr | name             |
+|:----:|:---------------- |
+| ITA  | Italian          |
+| TUR  | Turkish          |
+| VIE  | Vietnamese       |
+| OTH  | Other            |
+| CHI  | Chinese Mandarin |
+| GER  | German           |
+| FRE  | French           |
+| ASL  | ASL              |
+| HIN  | Hindi            |
+| SPA  | Spanish          |
+| HMO  | Hmong            |
+| POL  | Polish           |
+| POR  | Portuguese       |
+| ENG  | English          |
+| FAR  | Farsi            |
+| KOR  | Korean           |
+| CRE  | Creole           |
+| CAM  | Cambodian        |
+| CAN  | Cantonese        |
+| UKR  | Ukrainian        |
+| SWA  | Swahili          |
+| ARA  | Arabic           |
+| IND  | Indonesian       |
+| RUS  | Russian          |
+| CZE  | Czech            |
+
 ## cron_job management command
 
-`./manage.py cron_job` will load HUD data into hud_api_replace_counselingagencies local table. Error messages will
-be emailed to a list of emails (right now consisting of test3@example.com only).
+`./manage.py cron_job` will load HUD data into local database. Error messages will be emailed to a list of emails
+defined in `$DJANGO_HUD_NOTIFY_EMAILS`

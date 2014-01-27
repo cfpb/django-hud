@@ -7,7 +7,7 @@ from hud_api_replace.geocode import GeoCode
 import csv
 import json
 
-from .models import CounselingAgency
+from .models import CounselingAgency, Service, Language
 
 def geocode_zip( zipcode ):
     try:
@@ -26,7 +26,6 @@ def return_fields( row ):
         fields_values[ field.attname ] = row[ fields.index( field ) ]
 
     fields_values['distance'] = round( row[ -1 ], 1 )
-
     return fields_values
 
 
@@ -38,7 +37,28 @@ def get_request_variables( GET ):
     variables['language'] = GET.get( 'language', '' )
     variables['service'] = GET.get( 'service', '' )
 
+    if variables['language'] != '':
+       variables['language'] = translate_params('language', variables['language'])
+    if variables['service'] != '':
+       variables['service'] = translate_params('service', variables['service'])
     return variables
+
+
+def translate_params( param_type, values ):
+    items = values.split(',')
+    if param_type == 'language':
+        abbrs = Language.objects.all()
+    elif param_type == 'service':
+        abbrs = Service.objects.all()
+    else:
+        return items
+    pairs = {}
+    for pair in abbrs:
+        pairs[pair.abbr] = pair.name
+    for ndx, item in enumerate( items ):
+        items[ndx] = pairs.get(item.upper(), item)
+    print "|%s|" % items
+    return items
 
 
 def get_counsel_list( zipcode, GET ):
@@ -60,20 +80,22 @@ def get_counsel_list( zipcode, GET ):
 
         prepend = ' WHERE ('
         if rvars['language'] != '':
-            for lang in rvars['language'].split(','):
-                sql += prepend + 'languages LIKE "%%%s%%" '
-                qry_args.append(lang)
+            for lang in rvars['language']:
+                sql += prepend + 'languages LIKE %s '
+                qry_args.append('%' + lang + '%')
                 prepend = ' OR '
             sql += ') '
             prepend = ' AND ('
         if rvars['service'] != '':
-            for serv in rvars['service'].split(','):
-                sql += prepend + 'services LIKE "%%%s%%" '
-                qry_args.append(serv)
+            for serv in rvars['service']:
+                sql += prepend + 'services LIKE %s '
+                qry_args.append('%' + serv + '%')
                 prepend = ' OR '
             sql += ') '
 
         sql += """ HAVING distance < %s ORDER BY distance LIMIT %s OFFSET %s;"""
+        print " QRY %s " % sql
+        print " ARGS %s " % qry_args
         qry_args += [ rvars['distance'], rvars['limit'], rvars['offset'] ]
 
         cursor = connection.cursor()
@@ -97,7 +119,12 @@ def export_csv( request, zipcode ):
 
     data = get_counsel_list( zipcode, request.GET )
     writer = csv.writer( response )
-    writer.writerow( data )
+    if data['counseling_agencies'] and len(data['counseling_agencies']) > 0:
+        writer.writerow( data['counseling_agencies'][0].keys() )
+        for item in data['counseling_agencies']:
+            writer.writerow( item.values() )
+    else:
+        writer.writerow( ['No data found'] )
 
     return response
 
