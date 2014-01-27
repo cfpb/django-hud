@@ -100,6 +100,10 @@ and Credit Repair Workshops] services:
 | RUS  | Russian          |
 | CZE  | Czech            |
 
+## JSON-P
+
+Add `callback` parameter to the call. Works only when format is `json`.
+
 ## cron_job management command
 
 `./manage.py cron_job` will load HUD data into local database. Error messages will be emailed to a list of emails

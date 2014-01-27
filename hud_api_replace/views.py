@@ -57,7 +57,6 @@ def translate_params( param_type, values ):
         pairs[pair.abbr] = pair.name
     for ndx, item in enumerate( items ):
         items[ndx] = pairs.get(item.upper(), item)
-    print "|%s|" % items
     return items
 
 
@@ -94,8 +93,6 @@ def get_counsel_list( zipcode, GET ):
             sql += ') '
 
         sql += """ HAVING distance < %s ORDER BY distance LIMIT %s OFFSET %s;"""
-        print " QRY %s " % sql
-        print " ARGS %s " % qry_args
         qry_args += [ rvars['distance'], rvars['limit'], rvars['offset'] ]
 
         cursor = connection.cursor()
