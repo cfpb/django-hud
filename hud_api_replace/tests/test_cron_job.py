@@ -544,7 +544,7 @@ class TestCronJob( TestCase ):
         email = 'test_email.com'
         self.assertEqual( self.cmd.reformat_email( email ), 'Not available')
 
-    def test_reformat_email_2( self ):
+    def test_reformat_email_4( self ):
         """ Testing reformat_email, no . after @ sign """
         email = 'test@emailcom'
         self.assertEqual( self.cmd.reformat_email( email ), 'Not available')
