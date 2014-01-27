@@ -10,20 +10,17 @@ import json
 from .models import CounselingAgency
 
 def geocode_zip( zipcode ):
-    # use google api or dstk
     try:
         geocode = GeoCode( zipcode )
         return geocode.google_maps_api()
     except:
         return {'error': 'Error while getting geocoding information for ' + zipcode}
-    #return dstk_api( zipcode )
 
 
 # list of fields that are returned from the API
 # right now returns all fields
 def return_fields( row ):
     fields = CounselingAgency._meta.fields
-    #fields_values = { field.attname: getattr( row, field.attname ) for field in fields }
     fields_values = {}
     for field in fields:
         fields_values[ field.attname ] = row[ fields.index( field ) ]
@@ -53,31 +50,34 @@ def get_counsel_list( zipcode, GET ):
         latitude = data['zip']['lat']
         longitude = data['zip']['lng']
 
-        where = ''
-        prepend = ' WHERE ('
-        if rvars['language'] != '':
-            for lang in rvars['language'].split(','):
-                where += '%s languages LIKE "%%%%%s%%%%" ' % (prepend, lang)
-                prepend = ' OR '
-            where += ') '
-            prepend = ' AND ('
-        if rvars['service'] != '':
-            for serv in rvars['service'].split(','):
-                where += '%s services LIKE "%%%%%s%%%%" ' % (prepend, rvars['service'])
-                prepend = ' OR '
-            where += ') '
-
         # from
         # http://stackoverflow.com/questions/1916953/filter-zipcodes-by-proximity-in-django-with-the-spherical-law-of-cosines
         eradius = 3959 # Earth radius in miles
-        cursor = connection.cursor()
-        sql = """SELECT *, (%f * acos( cos( radians(%f) ) * cos( radians( agc_ADDR_LATITUDE ) ) *
-            cos( radians( agc_ADDR_LONGITUDE ) - radians(%f) ) + sin( radians(%f) ) * sin( radians( agc_ADDR_LATITUDE ) ) ) )
-            AS distance FROM hud_api_replace_counselingagency %s HAVING distance < %d
-            ORDER BY distance LIMIT %d OFFSET %d;""" \
-            % (eradius, latitude, longitude, latitude, where, rvars['distance'], rvars['limit'], rvars['offset'])
+        sql = """SELECT *, (%s * acos( cos( radians(%s) ) * cos( radians( agc_ADDR_LATITUDE ) ) *
+            cos( radians( agc_ADDR_LONGITUDE ) - radians(%s) ) + sin( radians(%s) ) * sin( radians( agc_ADDR_LATITUDE ) ) ) )
+            AS distance FROM hud_api_replace_counselingagency """
+        qry_args = [ eradius, latitude, longitude, latitude ]
 
-        cursor.execute(sql)
+        prepend = ' WHERE ('
+        if rvars['language'] != '':
+            for lang in rvars['language'].split(','):
+                sql += prepend + 'languages LIKE "%%%s%%" '
+                qry_args.append(lang)
+                prepend = ' OR '
+            sql += ') '
+            prepend = ' AND ('
+        if rvars['service'] != '':
+            for serv in rvars['service'].split(','):
+                sql += prepend + 'services LIKE "%%%s%%" '
+                qry_args.append(serv)
+                prepend = ' OR '
+            sql += ') '
+
+        sql += """ HAVING distance < %s ORDER BY distance LIMIT %s OFFSET %s;"""
+        qry_args += [ rvars['distance'], rvars['limit'], rvars['offset'] ]
+
+        cursor = connection.cursor()
+        cursor.execute(sql, qry_args)
         result = cursor.fetchall()
         data['counseling_agencies'] = [ return_fields( agc ) for agc in result ]
 
