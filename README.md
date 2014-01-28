@@ -46,7 +46,7 @@ Get the list of agencies that speak English or Korean:
 Get list of agencies that provide [Mortgage Delinquency and Default Resolution Counse] or [Financial, Budgeting
 and Credit Repair Workshops] services:
 
-`20005/?service=dfc,fbw`
+`hud-api-replace/20005/?service=dfc,fbw`
 
 ## Service Abbreviations:
 
