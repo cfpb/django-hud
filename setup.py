@@ -15,14 +15,13 @@ def read_file(filename):
 setup(
     name='django_hud',
     version=__import__('hud_api_replace').__version__,
-    author='CFPB',
-    author_email='tech@cfpb.gov',
+    author='s gorobet',
+    author_email='sgorobet@gmail.com',
     packages=['hud_api_replace'],
     include_package_data=True,
-    description=u'An API to return a Counseling Agencies list',
+    description=u'An API to return Counseling Agencies list',
     classifiers=[
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
-        'Intended Audience :: Developers',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
