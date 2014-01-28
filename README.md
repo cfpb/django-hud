@@ -39,11 +39,11 @@ formatted as `json`:
 
 `hud-api-replace/20005?limit=5&offset=1&distance=100`
 
-Get the list of agencies that speak English *OR* Korean:
+Get the list of agencies that speak English or Korean:
 
 `hud-api-replace/20005?language=eng,kor`
 
-Get list of agencies that provide [Mortgage Delinquency and Default Resolution Counse] and [Financial, Budgeting
+Get list of agencies that provide [Mortgage Delinquency and Default Resolution Counse] or [Financial, Budgeting
 and Credit Repair Workshops] services:
 
 `20005/?service=dfc,fbw`
