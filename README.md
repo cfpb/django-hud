@@ -104,7 +104,23 @@ and Credit Repair Workshops] services:
 
 Add `callback` parameter to the call. Works only when format is `json`.
 
+## Installation
+
+Add `hud_api_replace` to `INSTALLED_APPS` in settings file. If `South` is used, migrations folder will have to be
+removed. Make sure variables `settings.GOOGLE_MAPS_API_PRIVATE_KEY`, `settings.GOOGLE_MAPS_API_CLIENT_ID` and
+`settings.DJANGO_HUD_NOTIFY_EMAILS` are set.
+
+`manage.py syncdb`
+
+will create three tables used by the module.
+
+`manage.py cron_job`
+
+will load HUD data into local database.
+
+include hud_api_replace.urls.
+
 ## cron_job management command
 
-`./manage.py cron_job` will load HUD data into local database. Error messages will be emailed to a list of emails
+`manage.py cron_job` will load HUD data into local database. Error messages will be emailed to a list of emails
 defined in `$DJANGO_HUD_NOTIFY_EMAILS`
