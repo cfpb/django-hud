@@ -10,7 +10,7 @@ from hud_api_replace.models import CounselingAgency, Language, Service
 from hud_api_replace.geocode import GoogleGeocode
 
 
-class Command( BaseCommand ):
+class Command(BaseCommand):
     help = 'Loads data from HUD into local hud_api_replace_counselingagency table.'
     # expect emails be a comma-separated list
     notify_emails = settings.DJANGO_HUD_NOTIFY_EMAILS.split(',')
@@ -19,7 +19,6 @@ class Command( BaseCommand ):
     services = {}
     counselors = {}
 
-
     def handle(self, *args, **options):
         self.languages = self.convert2normal(self.hud_data('languages'))
         self.services = self.convert2normal(self.hud_data('services'))
@@ -27,10 +26,9 @@ class Command( BaseCommand ):
         self.counselors = self.hud_data('counselors')
         self.save_data()
         if self.errors != '':
-            email = EmailMessage('Errors while loading HUD data', self.errors, to = self.notify_emails)
+            email = EmailMessage('Errors while loading HUD data', self.errors, to=self.notify_emails)
             email.send()
         self.stdout.write('HUD data has been loaded.')
-
 
     def hud_data(self, step):
         """ Accesses HUD to get languages, services or counseling agency data """
@@ -38,22 +36,21 @@ class Command( BaseCommand ):
         dc_long = "-77.0367"
         distance = "5000"
         urls = {
-            'languages':'http://data.hud.gov/Housing_Counselor/getLanguages',
-            'services':'http://data.hud.gov/Housing_Counselor/getServices',
-            'counselors':"%s?Lat=%s&Long=%s&Distance=%s" %
-                    ( 'http://data.hud.gov/Housing_Counselor/searchByLocation', dc_lat, dc_long, distance )
+            'languages': 'http://data.hud.gov/Housing_Counselor/getLanguages',
+            'services': 'http://data.hud.gov/Housing_Counselor/getServices',
+            'counselors': "%s?Lat=%s&Long=%s&Distance=%s" %
+                          ('http://data.hud.gov/Housing_Counselor/searchByLocation', dc_lat, dc_long, distance)
         }
 
         try:
-            response = urllib2.urlopen( urls[step] )
-            return json.loads( response.read() )
+            response = urllib2.urlopen(urls[step])
+            return json.loads(response.read())
         except urllib2.URLError as e:
             self.errors += 'Error when accessing HUD server: %s\n' % e.reason
             return []
         except Exception as e:
             self.errors += 'Exception raised: %s\n' % e
             return []
-
 
     def convert2normal(self, storage):
         """ Populate self.services or self.languages """
@@ -67,7 +64,6 @@ class Command( BaseCommand ):
                 self.errors += 'Exception raised: %s\n' % e
                 return {}
         return {}
-
 
     def save_data(self):
         """ Save data to local database """
@@ -86,7 +82,6 @@ class Command( BaseCommand ):
         else:
             self.errors += 'Error: there were no counselors to be saved'
 
-
     def load_local_data(self):
         """ Load langauges and/or services if call to HUD API didn't return them """
         if not self.languages:
@@ -95,18 +90,16 @@ class Command( BaseCommand ):
             self.services = self.convert2normal(self.convert2hud(Service.objects.all()))
         return
 
-
     def convert2hud(self, data):
         """ HUD returned data has a very interesting structure,
             this function will convert its argument to that form """
         transformed_data = []
         try:
             for item in data:
-                transformed_data.append({'key':item.abbr,'value':item.name})
+                transformed_data.append({'key': item.abbr,'value': item.name})
         except Exception:
             return []
         return transformed_data
-
 
     def insert_lang_serv(self, type_obj, item):
         """ Save a service/language to local database """
@@ -119,7 +112,6 @@ class Command( BaseCommand ):
                 self.errors += 'Error while saving [%s]: %s\n' % (item[1], e)
             else:
                 self.errors += 'Error while saving'
-
 
     def insert_counselor(self, counselor):
         """ Save a counseling agency to local database """
@@ -162,7 +154,7 @@ class Command( BaseCommand ):
 
         try:
             if obj.agc_ADDR_LATITUDE == '0' or obj.agc_ADDR_LONGITUDE == '0':
-                geocode = GoogleGeocode( obj.zipcd[:5] )
+                geocode = GoogleGeocode(obj.zipcd[:5])
                 geocode_data = geocode.google_maps_api()
                 if 'zip' in geocode_data:
                     obj.agc_ADDR_LATITUDE = geocode_data['zip']['lat']
@@ -171,33 +163,31 @@ class Command( BaseCommand ):
                     raise Exception('Could not obtain geocoding information for zipcode [%s]' % obj.zipcd)
             obj.save()
         except Exception as e:
-            self.errors += 'Error while saving agency [%s]: %s\n' % ( obj.nme, e )
-
+            self.errors += 'Error while saving agency [%s]: %s\n' % (obj.nme, e)
 
     def sanitize_values(self, counselor):
         """ Change some fields so values have accepted letter case and/or values """
         # Change null values to ''
         # Apply proper letter case
         for key in counselor.keys():
-            if counselor[key] == None:
+            if counselor[key] is None:
                 counselor[key] = ''
 
-        counselor['nme'] = self.title_case( counselor['nme'] )
-        counselor['city'] = self.title_case( counselor['city'] )
-        counselor['mailingcity'] = self.title_case( counselor['mailingcity'] )
+        counselor['nme'] = self.title_case(counselor['nme'])
+        counselor['city'] = self.title_case(counselor['city'])
+        counselor['mailingcity'] = self.title_case(counselor['mailingcity'])
 
-        counselor['languages'] = self.translate_languages( counselor['languages'] )
-        counselor['services'] = self.translate_services( counselor['services'] )
+        counselor['languages'] = self.translate_languages(counselor['languages'])
+        counselor['services'] = self.translate_services(counselor['services'])
 
-        counselor['weburl'] = self.reformat_weburl( counselor['weburl'] )
-        counselor['email'] = self.reformat_email( counselor['email'] )
+        counselor['weburl'] = self.reformat_weburl(counselor['weburl'])
+        counselor['email'] = self.reformat_email(counselor['email'])
 
         if counselor['agc_ADDR_LATITUDE'] == '' or counselor['agc_ADDR_LATITUDE'] == None:
             counselor['agc_ADDR_LATITUDE'] = '0'
 
         if counselor['agc_ADDR_LONGITUDE'] == '' or counselor['agc_ADDR_LONGITUDE'] == None:
             counselor['agc_ADDR_LONGITUDE'] = '0'
-
 
     # Shamelessly copied most of hud-api-proxy.php
     def title_case(self, string):
@@ -210,7 +200,6 @@ class Command( BaseCommand ):
             if word not in lower_case:
                 str_list[ndx] = word.title()
         return ' '.join(str_list)
-
 
     def translate_languages(self, string):
         """ Change abbreviations for actual language names """
@@ -229,7 +218,6 @@ class Command( BaseCommand ):
             verbose_languages += prepend + other
         return verbose_languages
 
-
     def translate_services(self, string):
         """ Change abbreviations for actual service names """
         srv_list = string.split(',')
@@ -244,7 +232,6 @@ class Command( BaseCommand ):
             verbose_services = 'Not available'
         return verbose_services
 
-
     def reformat_weburl(self, string):
         """ Basic check of a url structure """
         string = string.strip()
@@ -255,7 +242,6 @@ class Command( BaseCommand ):
             if not match:
                 return 'http://' + string
         return string
-
 
     def reformat_email(self, string):
         """ Basic check of an email structure """
