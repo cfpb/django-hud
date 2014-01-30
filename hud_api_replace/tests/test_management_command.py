@@ -3,9 +3,9 @@ from mock import MagicMock, patch
 
 from urllib2 import URLError
 
-from hud_api_replace.management.commands import cron_job
+from hud_api_replace.management.commands import load_hud_data
 from hud_api_replace.models import Service, Language, CounselingAgency
-from hud_api_replace.geocode import GeoCode
+from hud_api_replace.geocode import GoogleGeocode
 
 def hud_api_urls( step ):
     urls = {
@@ -26,13 +26,13 @@ class SimpleClass(object):
 
 class TestCronJob( TestCase ):
     def setUp( self ):
-        self.cmd = cron_job.Command()
+        self.cmd = load_hud_data.Command()
 
     def test_handle(self):
         # not really necessary
         pass
 
-    @patch('hud_api_replace.management.commands.cron_job.urllib2.urlopen')
+    @patch('hud_api_replace.management.commands.load_hud_data.urllib2.urlopen')
     def test_hud_data__steps( self, mock_urlopen ):
         """ Testing hud_data, step = [services|languages|counselors] """
 
@@ -52,7 +52,7 @@ class TestCronJob( TestCase ):
         self.assertTrue( response['Access_URL'].startswith(hud_api_urls('counselors')))
         self.assertTrue( response['Success'] == 'success' )
 
-    @patch('hud_api_replace.management.commands.cron_job.urllib2.urlopen')
+    @patch('hud_api_replace.management.commands.load_hud_data.urllib2.urlopen')
     def test_hud_data__error( self, mock_urlopen ):
         """ Testing hud_data, raise a URLError exception """
         mock_urlopen.side_effect = URLError('URLError exception')
@@ -60,7 +60,7 @@ class TestCronJob( TestCase ):
         self.assertTrue( 'URLError exception' in self.cmd.errors )
         self.assertTrue( response == [] )
 
-    @patch('hud_api_replace.management.commands.cron_job.urllib2.urlopen')
+    @patch('hud_api_replace.management.commands.load_hud_data.urllib2.urlopen')
     def test_hud_data__bad_json( self, mock_urlopen ):
         """ Testing hd_data, return bad json from urllib2.urlopen """
         mm = MagicMock()
@@ -128,7 +128,7 @@ class TestCronJob( TestCase ):
         self.assertTrue( abbr2.name == 'Service 2' )
         self.assertTrue( lang3.name == 'Language 3' )
 
-    @patch('hud_api_replace.geocode.GeoCode.google_maps_api')
+    @patch('hud_api_replace.geocode.GoogleGeocode.google_maps_api')
     def test_save_data__counselors( self, mock_geocode ):
         """ Testing save_data, only self.counselors are set """
         mock_geocode.return_value = {'zip':{'lat':'10','lng':'20'}}
@@ -149,7 +149,7 @@ class TestCronJob( TestCase ):
         self.assertTrue( len(counselors) == 2 )
         self.assertTrue( agc2.nme == 'Counselor 2' )
 
-    @patch('hud_api_replace.geocode.GeoCode.google_maps_api')
+    @patch('hud_api_replace.geocode.GoogleGeocode.google_maps_api')
     def test_save_data__counselors_languages( self, mock_geocode ):
         """ Testing save_data, counselors and languages are set """
         mock_geocode.return_value = {'zip':{'lat':'10','lng':'20'}}
@@ -293,7 +293,7 @@ class TestCronJob( TestCase ):
         objs = CounselingAgency.objects.all()
         self.assertTrue( len(objs) == 0 )
 
-    @patch('hud_api_replace.geocode.GeoCode.google_maps_api')
+    @patch('hud_api_replace.geocode.GoogleGeocode.google_maps_api')
     def test_insert_counselor__empty_agc_latitude( self, mock_geocode ):
         """ Testing insert_counselor, agc_ADDR_LATITUDE = 0 """
         mock_geocode.return_value = {'zip':{'lat':'10','lng':'20'}}
@@ -308,7 +308,7 @@ class TestCronJob( TestCase ):
         self.assertTrue( obj[0].city == 'City 1' )
 
 
-    @patch('hud_api_replace.geocode.GeoCode.google_maps_api')
+    @patch('hud_api_replace.geocode.GoogleGeocode.google_maps_api')
     def test_insert_counselor__empty_agc_longitude( self, mock_geocode ):
         """ Testing insert_counselor, agc_ADDR_LONGITUDE = 0 """
         mock_geocode.return_value = {'zip':{'lat':'10','lng':'20'}}
@@ -322,7 +322,7 @@ class TestCronJob( TestCase ):
         self.assertTrue( obj[0].nme == 'Counselor 1' )
         self.assertTrue( obj[0].agc_ADDR_LONGITUDE == '20' )
 
-    @patch('hud_api_replace.geocode.GeoCode.google_maps_api')
+    @patch('hud_api_replace.geocode.GoogleGeocode.google_maps_api')
     def test_insert_counselor__bad_zipcode( self, mock_geocode ):
         """ Testing insert_counselor, bad zipcd """
         mock_geocode.return_value = {'error':'No data for bad zip'}
@@ -331,7 +331,7 @@ class TestCronJob( TestCase ):
             'agc_ADDR_LATITUDE':'','agc_ADDR_LONGITUDE':'0','email':'test@agc1.com',}
         self.assertRaises(Exception, self.cmd.insert_counselor( counselor ))
 
-    @patch('hud_api_replace.geocode.GeoCode.google_maps_api')
+    @patch('hud_api_replace.geocode.GoogleGeocode.google_maps_api')
     def test_insert_counselor__good_zipcode( self, mock_geocode ):
         """ Testing insert_counselor, good zipcd """
         mock_geocode.return_value = {'zip':{'lat':'10','lng':'20'}}
@@ -346,7 +346,7 @@ class TestCronJob( TestCase ):
         self.assertTrue( obj[0].agc_ADDR_LONGITUDE == '20' )
         self.assertTrue( obj[0].agc_ADDR_LATITUDE == '10' )
 
-    @patch('hud_api_replace.geocode.GeoCode.google_maps_api')
+    @patch('hud_api_replace.geocode.GoogleGeocode.google_maps_api')
     def test_insert_counselor__error_from_google_maps( self, mock_geocode ):
         """ Testing insert_counselor, no response from Google Maps API """
         mock_geocode.return_value = {'error':'Error from Google'}
@@ -355,7 +355,7 @@ class TestCronJob( TestCase ):
             'agc_ADDR_LATITUDE':'','agc_ADDR_LONGITUDE':'0','email':'test@agc1.com',}
         self.assertRaises(Exception, self.cmd.insert_counselor( counselor ))
 
-    @patch('hud_api_replace.geocode.GeoCode.google_maps_api')
+    @patch('hud_api_replace.geocode.GoogleGeocode.google_maps_api')
     @patch('django.db.models.Model.save')
     def test_insert_counselor__exception_when_saving( self, mock_geocode, mock_save ):
         """ Testing insert_counselor, generate exception when saving """

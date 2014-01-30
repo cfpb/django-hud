@@ -7,7 +7,7 @@ import json
 import re
 
 from hud_api_replace.models import CounselingAgency, Language, Service
-from hud_api_replace.geocode import GeoCode
+from hud_api_replace.geocode import GoogleGeocode
 
 
 class Command( BaseCommand ):
@@ -162,7 +162,7 @@ class Command( BaseCommand ):
 
         try:
             if obj.agc_ADDR_LATITUDE == '0' or obj.agc_ADDR_LONGITUDE == '0':
-                geocode = GeoCode( obj.zipcd[:5] )
+                geocode = GoogleGeocode( obj.zipcd[:5] )
                 geocode_data = geocode.google_maps_api()
                 if 'zip' in geocode_data:
                     obj.agc_ADDR_LATITUDE = geocode_data['zip']['lat']

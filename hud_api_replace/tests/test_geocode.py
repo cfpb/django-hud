@@ -1,11 +1,11 @@
 from django.test import TestCase
 from mock import MagicMock, patch
 
-from hud_api_replace.geocode import GeoCode
+from hud_api_replace.geocode import GoogleGeocode
 
-class TestGeoCode( TestCase ):
+class TestGoogleGeocode( TestCase ):
     def setUp( self ):
-        self.gc = GeoCode( 20005 )
+        self.gc = GoogleGeocode( 20005 )
 
     def test_init( self ):
         """ Testing __init__ """

@@ -2,24 +2,25 @@ from django.http import HttpResponse
 from django.template import RequestContext, loader
 from django.db import connection, transaction
 
-from hud_api_replace.geocode import GeoCode
+from hud_api_replace.geocode import GoogleGeocode
 
 import csv
 import json
+import re
 
 from .models import CounselingAgency, Service, Language
 
 def geocode_zip( zipcode ):
+    """ Get zipcode geocoding information """
     try:
-        geocode = GeoCode( zipcode )
+        geocode = GoogleGeocode( zipcode )
         return geocode.google_maps_api()
     except:
         return {'error': 'Error while getting geocoding information for ' + zipcode}
 
 
-# list of fields that are returned from the API
-# right now returns all fields
 def return_fields( row ):
+    """ Limit what fields get returned, right now it returns all fields """
     fields = CounselingAgency._meta.fields
     fields_values = {}
     for field in fields:
@@ -30,8 +31,10 @@ def return_fields( row ):
 
 
 def get_request_variables( GET ):
+    """ Read query string parameters """
     variables = {}
     variables['distance'] = int(GET.get( 'distance', '5000' ))
+
     variables['limit'] = int(GET.get( 'limit', '10' ))
     variables['offset'] = int(GET.get( 'offset', '0' )) * variables['limit']
     variables['language'] = GET.get( 'language', '' )
@@ -45,6 +48,7 @@ def get_request_variables( GET ):
 
 
 def translate_params( param_type, values ):
+    """ Change langauge/service abbreviations for their corresponding names """
     items = values.split(',')
     if param_type == 'language':
         abbrs = Language.objects.all()
@@ -61,6 +65,7 @@ def translate_params( param_type, values ):
 
 
 def get_counsel_list( zipcode, GET ):
+    """ Return resulting data """
     rvars = get_request_variables( GET )
 
     # geocoding to get zipcode lat/long
@@ -104,6 +109,7 @@ def get_counsel_list( zipcode, GET ):
 
 
 def api_entry( request, zipcode = 0, output_format = 'json' ):
+    """ Descide what format to return data in """
     if output_format == 'csv':
         return export_csv( request, zipcode )
     else:
@@ -111,6 +117,7 @@ def api_entry( request, zipcode = 0, output_format = 'json' ):
 
 
 def export_csv( request, zipcode ):
+    """ Return resulting data in csv format """
     response = HttpResponse( content_type = 'text/csv' )
     response['Content-Disposition'] = 'attachment; filename="' + zipcode + '.csv"'
 
@@ -127,7 +134,11 @@ def export_csv( request, zipcode ):
 
 
 def return_json( request, zipcode ):
+    """ Return resulting data in json or jsonp format """
     callback = request.GET.get('callback','')
+    print  "first |%s|" % callback
+    if not re.match(r'^[0-9a-zA-Z\_$]*$', callback):
+        callback = ''
     data = get_counsel_list( zipcode, request.GET )
     if callback == '':
         response = HttpResponse(content_type='application/json')
