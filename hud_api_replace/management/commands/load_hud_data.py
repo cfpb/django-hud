@@ -70,6 +70,7 @@ class Command( BaseCommand ):
 
 
     def save_data(self):
+        """ Save data to local database """
         if self.services:
             Service.objects.all().delete()
             for item in self.services:
@@ -87,6 +88,7 @@ class Command( BaseCommand ):
 
 
     def load_local_data(self):
+        """ Load langauges and/or services if call to HUD API didn't return them """
         if not self.languages:
             self.languages = self.convert2normal(self.convert2hud(Language.objects.all()))
         if not self.services:
@@ -95,6 +97,8 @@ class Command( BaseCommand ):
 
 
     def convert2hud(self, data):
+        """ HUD returned data has a very interesting structure,
+            this function will convert its argument to that form """
         transformed_data = []
         try:
             for item in data:
@@ -105,6 +109,7 @@ class Command( BaseCommand ):
 
 
     def insert_lang_serv(self, type_obj, item):
+        """ Save a service/language to local database """
         try:
             type_obj.abbr = item[0]
             type_obj.name = item[1]
@@ -117,6 +122,7 @@ class Command( BaseCommand ):
 
 
     def insert_counselor(self, counselor):
+        """ Save a counseling agency to local database """
         if not counselor or counselor == {}:
             return
         self.sanitize_values(counselor)
@@ -169,6 +175,7 @@ class Command( BaseCommand ):
 
 
     def sanitize_values(self, counselor):
+        """ Change some fields so values have accepted letter case and/or values """
         # Change null values to ''
         # Apply proper letter case
         for key in counselor.keys():
@@ -194,6 +201,7 @@ class Command( BaseCommand ):
 
     # Shamelessly copied most of hud-api-proxy.php
     def title_case(self, string):
+        """ Convert the argument to have title case """
         string = string.lower()
         str_list = string.split(' ')
         lower_case = ['a', 'an', 'and', 'as', 'at', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'with']
@@ -205,6 +213,7 @@ class Command( BaseCommand ):
 
 
     def translate_languages(self, string):
+        """ Change abbreviations for actual language names """
         langs = string.split(',')
         verbose_languages = ''
         prepend = ''
@@ -222,6 +231,7 @@ class Command( BaseCommand ):
 
 
     def translate_services(self, string):
+        """ Change abbreviations for actual service names """
         srv_list = string.split(',')
         verbose_services = ''
         prepend = ''
@@ -236,6 +246,7 @@ class Command( BaseCommand ):
 
 
     def reformat_weburl(self, string):
+        """ Basic check of a url structure """
         string = string.strip()
         if string.find('.') == -1 or string.find('notavailable') != -1:
             return 'Not available'
@@ -247,6 +258,7 @@ class Command( BaseCommand ):
 
 
     def reformat_email(self, string):
+        """ Basic check of an email structure """
         string = string.strip()
         if string.find('.') == -1 or string.count('@') != 1:
             return 'Not available'
