@@ -114,11 +114,11 @@ emails.
 
 * `manage.py syncdb` to create three tables used by the module.
 
-* `manage.py cron_job` to load HUD data into local database.
+* `manage.py load_hud_data` to load HUD data into local database.
 
 * include hud_api_replace.urls.
 
-## cron_job management command
+## load_hud_data management command
 
-`manage.py cron_job` will load HUD data into local database. Error messages will be emailed to a list of emails
+`manage.py load_hud_data` will load HUD data into local database. Error messages will be emailed to a list of emails
 defined in `$DJANGO_HUD_NOTIFY_EMAILS`
