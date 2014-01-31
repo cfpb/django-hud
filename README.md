@@ -1,26 +1,24 @@
-This is a django project that provides a very basic API on top of [HUD Housing Counseling](http://portal.hud.gov/hudportal/HUD?src=/program_offices/housing/sfh/hcc)
- data.
+`hud_api_replace` is a Django project that provides a very basic API on top of [HUD Housing
+Counseling](http://portal.hud.gov/hudportal/HUD?src=/program_offices/housing/sfh/hcc) data. It returns a list of
+HUD approved housing counseling agencies throughout the country that can provide advice on buying a home, renting,
+defaults, foreclosures, and credit issues near a given zipcode sorted by distance from it in ascending order.
 
-### Environmental variable GOOGLE_MAPS_API_PRIVATE_KEY must be set.
+### Parameters:
 
-### Environmental variable GOOGLE_MAPS_API_CLIENT_ID must be set.
+| Parameter  | Type                    | Default value | Short Description                                                 |
+|:---------- |:----------------------- |:-------------:|:----------------------------------------------------------------- |
+| `distance` | integer (in miles)      | 5000          | Distance between zipcode area centroid and counseling agency      |
+| `limit`    | integer                 | 10            | Number of results to return                                       |
+| `offset`   | integer                 | 0             | Number of times to skip `limit` items before returning results    |
+| `language` | string, comma separated | N/A           | A list of languages either of which is spoken in agency           |
+| `service`  | string, comma separated | N/A           | A list of services either of which is provided by agency          |
 
-### Environmental variable DJANGO_HUD_NOTIFY_EMAILS must be set.
-
-## hud_api_replace
-
-This module creates a basic API that returns a list of HUD-approved agencies near a given zipcode sorted by
-distance in ascending order. Data returned can be in `json` or `csv` format. The API accepts `distance`, `limit`,
-`offset`, `language` and `service` parameters.
-
-# Default values:
-
-For format is `json`, for `distance` is 5000, for `limit` is 10, and for `offset` is 0. `language` and `service`
-have no default values.
+Data returned can be in `json` (default) or `csv` format. To set the format append `.json` or `.csv` to the zipcode
+value when accessing the API.
 
 The API can be accessed from `hud-api-replace/:zipcode` address.
 
-# Examples:
+### Examples:
 
 Return 10 closest to 20005 agencies, formatted as `json`:
 
@@ -48,7 +46,7 @@ and Credit Repair Workshops] services:
 
 `hud-api-replace/20005/?service=dfc,fbw`
 
-## Service Abbreviations:
+### Service Abbreviations:
 
 | abbr | name                                               |
 |:---- |:-------------------------------------------------- |
@@ -70,7 +68,7 @@ and Credit Repair Workshops] services:
 | DFC  | Mortgage Delinquency and Default Resolution Counse |
 | HMC  | Services for Homeless Counseling                   |
 
-## Language Abbreviations:
+### Language Abbreviations:
 
 | abbr | name             |
 |:----:|:---------------- |
@@ -106,21 +104,21 @@ Add `callback` parameter to the call. Works only when format is `json`.
 
 ## Installation
 
-Add `hud_api_replace` to `INSTALLED_APPS` in settings file. If `South` is used, migrations folder will have to be
-removed. Make sure variables `settings.GOOGLE_MAPS_API_PRIVATE_KEY`, `settings.GOOGLE_MAPS_API_CLIENT_ID` and
-`settings.DJANGO_HUD_NOTIFY_EMAILS` are set.
+* Add `hud_api_replace` to `INSTALLED_APPS` in settings file.
 
-`manage.py syncdb`
+* If `South` is used, migrations folder will have to be removed.
 
-will create three tables used by the module.
+* Make sure variables `settings.GOOGLE_MAPS_API_PRIVATE_KEY`, `settings.GOOGLE_MAPS_API_CLIENT_ID` and
+`settings.DJANGO_HUD_NOTIFY_EMAILS` are set. `settings.DJANGO_HUD_NOTIFY_EMAILS` is a comma separated list of
+emails.
 
-`manage.py cron_job`
+* `manage.py syncdb` to create three tables used by the module.
 
-will load HUD data into local database.
+* `manage.py load_hud_data` to load HUD data into local database.
 
-include hud_api_replace.urls.
+* include hud_api_replace.urls.
 
-## cron_job management command
+## load_hud_data management command
 
-`manage.py cron_job` will load HUD data into local database. Error messages will be emailed to a list of emails
+`manage.py load_hud_data` will load HUD data into local database. Error messages will be emailed to a list of emails
 defined in `$DJANGO_HUD_NOTIFY_EMAILS`
