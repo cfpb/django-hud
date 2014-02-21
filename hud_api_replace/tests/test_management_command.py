@@ -137,10 +137,10 @@ class TestCronJob(TestCase):
         mock_geocode.return_value = {'zip': {'lat': '10', 'lng': '20'}}
         self.cmd.counselors = [{'agcid': 'id1', 'nme': 'Counselor 1', 'city': 'City 1', 'mailingcity': 'City 1',
                                 'languages': 'OTH,EN', 'services': 'SRV,SRV2', 'weburl': 'www.agc1.com',
-                                'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '', 'email': 'test@agc1.com'},
+                                'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '', 'email': 'test@example.com'},
                                {'agcid': 'id2', 'nme': 'Counselor 2', 'city': 'City 2', 'mailingcity': 'City 2',
                                 'languages': 'OTH,EN', 'services': 'SRV,SRV2', 'weburl': 'www.agc2.com',
-                                'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '', 'email': 'test@agc2.com'}]
+                                'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '', 'email': 'test@example.com'}]
         self.cmd.save_data()
         services = Service.objects.all()
         languages = Language.objects.all()
@@ -159,10 +159,10 @@ class TestCronJob(TestCase):
         self.cmd.counselors = [
             {'agcid': 'id1', 'nme': 'Counselor 1', 'city': 'City 1', 'mailingcity': 'City 1',
                 'languages': 'OTH,EN', 'services': 'SRV,SRV2', 'weburl': 'www.agc1.com', 'agc_ADDR_LATITUDE': '',
-                'agc_ADDR_LONGITUDE': '', 'email': 'test@agc1.com'},
+                'agc_ADDR_LONGITUDE': '', 'email': 'test@example.com'},
             {'agcid': 'id2', 'nme': 'Counselor 2', 'city': 'City 2', 'mailingcity': 'City 2', 'languages': 'OTH,EN',
                 'services': 'SRV,SRV2', 'weburl': 'www.agc2.com', 'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '',
-                'email': 'test@agc2.com'}
+                'email': 'test@example.com'}
         ]
         self.cmd.languages = {'Lang1': 'Language 1', 'Lang2': 'Language 2', 'Lang3': 'Language 3'}
         self.cmd.save_data()
@@ -305,7 +305,7 @@ class TestCronJob(TestCase):
         counselor = {
             'agcid': 'id1', 'nme': 'Counselor 1', 'city': 'City 1', 'mailingcity': 'City 1',
             'languages': 'OTH,EN', 'services': 'SRV,SRV2', 'weburl': 'www.agc1.com',
-            'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '', 'email': 'test@agc1.com'
+            'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '', 'email': 'test@example.com'
         }
         self.cmd.insert_counselor(counselor)
         obj = CounselingAgency.objects.all()
@@ -321,7 +321,7 @@ class TestCronJob(TestCase):
         counselor = {
             'agcid': 'id1', 'nme': 'Counselor 1', 'city': 'City 1', 'mailingcity': 'City 1',
             'languages': 'OTH,EN', 'services': 'SRV,SRV2', 'weburl': 'www.agc1.com',
-            'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '0', 'email': 'test@agc1.com'
+            'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '0', 'email': 'test@example.com'
         }
         self.cmd.insert_counselor(counselor)
         obj = CounselingAgency.objects.all()
@@ -337,7 +337,7 @@ class TestCronJob(TestCase):
         counselor = {
             'agcid': 'id1', 'nme': 'Counselor 1', 'city': 'City 1', 'mailingcity': 'City 1',
             'languages': 'OTH,EN', 'services': 'SRV,SRV2', 'weburl': 'www.agc1.com',
-            'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '0', 'email': 'test@agc1.com'
+            'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '0', 'email': 'test@example.com'
         }
         self.assertRaises(Exception, self.cmd.insert_counselor(counselor))
 
@@ -348,7 +348,7 @@ class TestCronJob(TestCase):
         counselor = {
             'agcid': 'id1', 'nme': 'Counselor 1', 'city': 'City 1', 'mailingcity': 'City 1',
             'languages': 'OTH,EN', 'services': 'SRV,SRV2', 'weburl': 'www.agc1.com',
-            'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '0', 'email': 'test@agc1.com'
+            'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '0', 'email': 'test@example.com'
         }
         self.cmd.insert_counselor(counselor)
         obj = CounselingAgency.objects.all()
@@ -365,7 +365,7 @@ class TestCronJob(TestCase):
         counselor = {
             'agcid': 'id1', 'nme': 'Counselor 1', 'city': 'City 1', 'mailingcity': 'City 1',
             'languages': 'OTH,EN', 'services': 'SRV,SRV2', 'weburl': 'www.agc1.com',
-            'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '0', 'email': 'test@agc1.com'
+            'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '0', 'email': 'test@example.com'
         }
         self.assertRaises(Exception, self.cmd.insert_counselor(counselor))
 
@@ -377,7 +377,7 @@ class TestCronJob(TestCase):
         counselor = {
             'agcid': 'id1', 'nme': 'Counselor 1', 'city': 'City 1', 'mailingcity': 'City 1',
             'languages': 'OTH,EN', 'services': 'SRV,SRV2', 'weburl': 'www.agc1.com',
-            'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '0', 'email': 'test@agc1.com'
+            'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '0', 'email': 'test@example.com'
         }
         mock_save.side_effect = Exception(' Could not save ')
         self.cmd.insert_counselor(counselor)
@@ -391,7 +391,7 @@ class TestCronJob(TestCase):
         counselor = {
             'agcid': None, 'nme': None, 'languages': 'OTH,EN', 'services': 'SRV,SRV2',
             'weburl': 'www.agc1.com', 'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '0',
-            'email': 'test@agc1.com', 'city': 'City 1', 'mailingcity': 'City 1'
+            'email': 'test@example.com', 'city': 'City 1', 'mailingcity': 'City 1'
         }
         self.cmd.sanitize_values(counselor)
         self.assertTrue(counselor['agcid'] == '')
@@ -402,7 +402,7 @@ class TestCronJob(TestCase):
         counselor = {
             'agcid': None, 'nme': None, 'languages': 'OTH,EN', 'services': 'SRV,SRV2',
             'weburl': 'www.agc1.com', 'agc_ADDR_LATITUDE': '', 'agc_ADDR_LONGITUDE': '0',
-            'email': 'test@agc1.com', 'city': 'City 1', 'mailingcity': 'City 1'
+            'email': 'test@example.com', 'city': 'City 1', 'mailingcity': 'City 1'
         }
         self.cmd.sanitize_values(counselor)
         self.assertTrue(counselor['agc_ADDR_LATITUDE'] == '0')
@@ -412,7 +412,7 @@ class TestCronJob(TestCase):
         counselor = {
             'agcid': None, 'nme': None, 'languages': 'OTH,EN', 'services': 'SRV,SRV2',
             'weburl': 'www.agc1.com', 'agc_ADDR_LATITUDE': None, 'agc_ADDR_LONGITUDE': '0',
-            'email': 'test@agc1.com', 'city': 'City 1', 'mailingcity': 'City 1'
+            'email': 'test@example.com', 'city': 'City 1', 'mailingcity': 'City 1'
         }
         self.cmd.sanitize_values(counselor)
         self.assertTrue(counselor['agc_ADDR_LATITUDE'] == '0')
@@ -422,7 +422,7 @@ class TestCronJob(TestCase):
         counselor = {
             'agcid': None, 'nme': None, 'languages': 'OTH,EN', 'services': 'SRV,SRV2',
             'weburl': 'www.agc1.com', 'agc_ADDR_LATITUDE': None, 'agc_ADDR_LONGITUDE': '',
-            'email': 'test@agc1.com', 'city': 'City 1', 'mailingcity': 'City 1'
+            'email': 'test@example.com', 'city': 'City 1', 'mailingcity': 'City 1'
         }
         self.cmd.sanitize_values(counselor)
         self.assertTrue(counselor['agc_ADDR_LONGITUDE'] == '0')
@@ -432,7 +432,7 @@ class TestCronJob(TestCase):
         counselor = {
             'agcid': None, 'nme': None, 'languages': 'OTH,EN', 'services': 'SRV,SRV2',
             'weburl': 'www.agc1.com', 'agc_ADDR_LATITUDE': None, 'agc_ADDR_LONGITUDE': None,
-            'email': 'test@agc1.com', 'city': 'City 1', 'mailingcity': 'City 1'
+            'email': 'test@example.com', 'city': 'City 1', 'mailingcity': 'City 1'
         }
         self.cmd.sanitize_values(counselor)
         self.assertTrue(counselor['agc_ADDR_LONGITUDE'] == '0')
@@ -562,20 +562,20 @@ class TestCronJob(TestCase):
 
     def test_reformat_email_2(self):
         """ Testing reformat_email, good email """
-        email = 'test@email.com'
-        self.assertEqual(self.cmd.reformat_email(email), 'test@email.com')
+        email = 'test@example.com'
+        self.assertEqual(self.cmd.reformat_email(email), 'test@example.com')
 
     def test_reformat_email_3(self):
         """ Testing reformat_email, no @ sign """
-        email = 'test_email.com'
+        email = 'test_example.com'
         self.assertEqual(self.cmd.reformat_email(email), 'Not available')
 
     def test_reformat_email_4(self):
         """ Testing reformat_email, no . after @ sign """
-        email = 'test@emailcom'
+        email = 'test@examplecom'
         self.assertEqual(self.cmd.reformat_email(email), 'Not available')
 
     def test_reformat_email_5(self):
         """ Testing reformat_email, 2 @ signs """
-        email = 'test@test@email.com'
+        email = 'test@test@example.com'
         self.assertEqual(self.cmd.reformat_email(email), 'Not available')
