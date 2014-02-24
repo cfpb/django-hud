@@ -61,8 +61,8 @@ def translate_params(param_type, values):
     for pair in abbrs:
         pairs[pair.abbr] = pair.name
     for ndx, item in enumerate(items):
-        items[ndx] = pairs.get(item.upper(), item)
-    return items
+        items[ndx] = pairs.get(item.upper())
+    return filter(bool, items)
 
 
 def get_counsel_list(zipcode, GET):
@@ -84,14 +84,14 @@ def get_counsel_list(zipcode, GET):
         qry_args = [eradius, latitude, longitude, latitude]
 
         prepend = ' WHERE ('
-        if rvars['language'] != '':
+        if rvars['language']:
             for lang in rvars['language']:
                 sql += prepend + 'languages LIKE %s '
                 qry_args.append('%' + lang + '%')
                 prepend = ' OR '
             sql += ') '
             prepend = ' AND ('
-        if rvars['service'] != '':
+        if rvars['service']:
             for serv in rvars['service']:
                 sql += prepend + 'services LIKE %s '
                 qry_args.append('%' + serv + '%')
