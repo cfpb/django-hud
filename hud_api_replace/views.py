@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.template import RequestContext, loader
 from django.db import connection, transaction
 
-from hud_api_replace.geocode import GoogleGeocode
+from hud_api_replace.geocode import geocode_get_data
 
 import csv
 import json
@@ -14,8 +14,7 @@ from .models import CounselingAgency, Service, Language
 def geocode_zip(zipcode):
     """ Get zipcode geocoding information """
     try:
-        geocode = GoogleGeocode(zipcode)
-        return geocode.google_maps_api()
+        return geocode_get_data(zipcode)
     except:
         return {'error': 'Error while getting geocoding information for ' + zipcode}
 

@@ -7,6 +7,79 @@ import hmac
 import base64
 import hashlib
 
+# This library has some issues when parsing addresses, esp. those with suite/apt #s.
+#  which results in weird looking keys. I can live with that, we only need zipcode
+#  parsed correctly  so we can use it to call GoogleGeocode.
+from address import AddressParser
+import re
+import time
+
+from hud_api_replace.models import CachedGeodata
+
+
+def _geocode_compute_key(address):
+    """Generate a key out of <address>."""
+    if address == '' or re.match('^[0-9]{5}(-[0-9]{4})?$', str(address)):
+        return address
+    try:
+        ap = AddressParser()
+        addr = ap.parse_address(address)
+        street = '%s %s %s %s' % (addr.house_number, addr.street_prefix, addr.street, addr.street_suffix)
+        citystate = '%s,%s' % (addr.city, addr.state)
+        # address lib doesn't handle xxxxx-xxxx zip codes
+        search = re.search('([0-9]{5})-[0-9]{4}$', address)
+        if search:
+            addr.zip = search.groups()[0]
+        return '%s|%s|%s' % (street.upper(), citystate.upper(), addr.zip)
+    except:
+        return ''
+
+
+def _extract_zip_code(key):
+    """What it says."""
+    search = re.search('[0-9\-]*$', key)
+    if search:
+        key = search.group()
+    return key
+
+
+def _geocode_cached_data(key):
+    """Returns data stored for <key>."""
+    try:
+        result = CachedGeodata.objects.all().filter(key=key).filter(expires__gte=time.time())
+        return {'result': [key, result[0].lat, result[0].lon]}
+    except:
+        raise Exception('No cached data found for %s', key)
+
+
+def _convert_data(data):
+    """Make sure the API returns data of the same structure."""
+    if 'result' in data:
+        return {'zip': {
+            'zipcode': _extract_zip_code(data['result'][0]),
+            'lat': data['result'][1],
+            'lng': data['result'][2],
+        }}
+    return data
+
+
+def geocode_get_data(address):
+    """Main function to obtain geocoding information."""
+    try:
+        key = _geocode_compute_key(address)
+        data = _geocode_cached_data(key)
+    except:
+        # apparently _geocode_cached_data raised an Exception
+        gg = GoogleGeocode(_extract_zip_code(key))
+        result = gg.google_maps_api()
+        if 'result' in result:
+            cg, created = CachedGeodata.objects.get_or_create(key=key, lat=result['result'][1], lon=result['result'][2])
+            # 1728000 is 20 days
+            cg.expires = int(time.time()) + getattr(settings, 'DJANGO_HUD_GEODATA_EXPIRATION_INTERVAL', 1728000)
+            cg.save()
+        data = result
+    return _convert_data(data)
+
 
 class GoogleGeocode(object):
 
@@ -90,11 +163,7 @@ class GoogleGeocode(object):
                     if result['geometry']:
                         lat = result['geometry']['location']['lat']
                         lng = result['geometry']['location']['lng']
-                        return {'zip': {
-                            'zipcode': self.zipcode,
-                            'lat': lat,
-                            'lng': lng,
-                        }}
+                        return {'result': [self.zipcode, lat, lng]}
         except KeyError as e:
             return {'error': 'Environmental variables GOOGLE_MAPS_API_PRIVATE_KEY and GOOGLE_MAPS_API_CLIENT_ID must be set'}
         except:
