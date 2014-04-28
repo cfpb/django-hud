@@ -80,7 +80,7 @@ class Command(BaseCommand):
             for item in self.counselors:
                 self.insert_counselor(item)
         else:
-            self.errors += 'Error: there were no counselors to be saved'
+            self.errors += 'Error: there were no counselors returned from the HUD service'
 
     def load_local_data(self):
         """ Load langauges and/or services if call to HUD API didn't return them """
@@ -96,7 +96,7 @@ class Command(BaseCommand):
         transformed_data = []
         try:
             for item in data:
-                transformed_data.append({'key': item.abbr,'value': item.name})
+                transformed_data.append({'key': item.abbr, 'value': item.name})
         except Exception:
             return []
         return transformed_data
@@ -111,7 +111,7 @@ class Command(BaseCommand):
             if item and item[1]:
                 self.errors += 'Error while saving [%s]: %s\n' % (item[1], e)
             else:
-                self.errors += 'Error while saving'
+                self.errors += 'Error while saving: %s\n' % e
 
     def insert_counselor(self, counselor):
         """ Save a counseling agency to local database """
@@ -183,10 +183,10 @@ class Command(BaseCommand):
         counselor['weburl'] = self.reformat_weburl(counselor['weburl'])
         counselor['email'] = self.reformat_email(counselor['email'])
 
-        if counselor['agc_ADDR_LATITUDE'] == '' or counselor['agc_ADDR_LATITUDE'] == None:
+        if counselor['agc_ADDR_LATITUDE'] == '' or counselor['agc_ADDR_LATITUDE'] is None:
             counselor['agc_ADDR_LATITUDE'] = '0'
 
-        if counselor['agc_ADDR_LONGITUDE'] == '' or counselor['agc_ADDR_LONGITUDE'] == None:
+        if counselor['agc_ADDR_LONGITUDE'] == '' or counselor['agc_ADDR_LONGITUDE'] is None:
             counselor['agc_ADDR_LONGITUDE'] = '0'
 
     # Shamelessly copied most of hud-api-proxy.php
