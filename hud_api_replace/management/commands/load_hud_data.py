@@ -80,7 +80,7 @@ class Command(BaseCommand):
             for item in self.counselors:
                 self.insert_counselor(item)
         else:
-            self.errors += 'Error: there were no counselors to be saved'
+            self.errors += 'Error: there were no counselors returned from the HUD service'
 
     def load_local_data(self):
         """ Load langauges and/or services if call to HUD API didn't return them """
@@ -111,7 +111,7 @@ class Command(BaseCommand):
             if item and item[1]:
                 self.errors += 'Error while saving [%s]: %s\n' % (item[1], e)
             else:
-                self.errors += 'Error while saving'
+                self.errors += 'Error while saving: %s\n' % e
 
     def insert_counselor(self, counselor):
         """ Save a counseling agency to local database """
