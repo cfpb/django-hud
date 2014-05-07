@@ -7,7 +7,7 @@ import json
 import re
 
 from hud_api_replace.models import CounselingAgency, Language, Service
-from hud_api_replace.geocode import GoogleGeocode
+from hud_api_replace.geocode import geocode_get_data
 
 
 class Command(BaseCommand):
@@ -96,7 +96,7 @@ class Command(BaseCommand):
         transformed_data = []
         try:
             for item in data:
-                transformed_data.append({'key': item.abbr,'value': item.name})
+                transformed_data.append({'key': item.abbr, 'value': item.name})
         except Exception:
             return []
         return transformed_data
@@ -154,8 +154,7 @@ class Command(BaseCommand):
 
         try:
             if obj.agc_ADDR_LATITUDE == '0' or obj.agc_ADDR_LONGITUDE == '0':
-                geocode = GoogleGeocode(obj.zipcd[:5])
-                geocode_data = geocode.google_maps_api()
+                geocode_data = geocode_get_data(obj.zipcd[:5])
                 if 'zip' in geocode_data:
                     obj.agc_ADDR_LATITUDE = geocode_data['zip']['lat']
                     obj.agc_ADDR_LONGITUDE = geocode_data['zip']['lng']
@@ -183,10 +182,10 @@ class Command(BaseCommand):
         counselor['weburl'] = self.reformat_weburl(counselor['weburl'])
         counselor['email'] = self.reformat_email(counselor['email'])
 
-        if counselor['agc_ADDR_LATITUDE'] == '' or counselor['agc_ADDR_LATITUDE'] == None:
+        if counselor['agc_ADDR_LATITUDE'] == '' or counselor['agc_ADDR_LATITUDE'] is None:
             counselor['agc_ADDR_LATITUDE'] = '0'
 
-        if counselor['agc_ADDR_LONGITUDE'] == '' or counselor['agc_ADDR_LONGITUDE'] == None:
+        if counselor['agc_ADDR_LONGITUDE'] == '' or counselor['agc_ADDR_LONGITUDE'] is None:
             counselor['agc_ADDR_LONGITUDE'] = '0'
 
     # Shamelessly copied most of hud-api-proxy.php

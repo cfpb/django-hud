@@ -3,6 +3,14 @@ from django.db import models
 import datetime
 
 
+class CachedGeodata(models.Model):
+    """Model to save geocoding information locally."""
+    key = models.CharField(max_length=255, unique=True)
+    lat = models.FloatField('Latitude')
+    lon = models.FloatField('Longitude')
+    expires = models.PositiveIntegerField(null=True)
+
+
 class CounselingAgency(models.Model):
     # example result can be obtained from
     # http://data.hud.gov/Housing_Counselor/searchByLocation?Lat=38.853231&Long=-77.305097&Distance=10
