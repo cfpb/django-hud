@@ -160,4 +160,7 @@ class TestGoogleGeocode(TestCase):
         mock_geocode.return_value = {'result': ['20006', 11, 22]}
         cg = CachedGeodata(key='20006', lat=111, lon=222, expires=time.time() - 10000)
         cg.save()
-        self.assertRaises(IntegrityError, geocode_get_data, '20006')
+        result = geocode_get_data('20006')
+        self.assertEqual(result['zip']['zipcode'], '20006')
+        self.assertEqual(result['zip']['lat'], 11)
+        self.assertEqual(result['zip']['lng'], 22)
