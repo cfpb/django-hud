@@ -6,8 +6,8 @@ import datetime
 class CachedGeodata(models.Model):
     """Model to save geocoding information locally."""
     key = models.CharField(max_length=255, unique=True)
-    lat = models.FloatField('Latitude')
-    lon = models.FloatField('Longitude')
+    lat = models.FloatField('Latitude', null=True)
+    lon = models.FloatField('Longitude', null=True)
     expires = models.PositiveIntegerField(null=True)
 
 

@@ -108,7 +108,7 @@ class TestCronJob(TestCase):
         languages = Language.objects.all()
         counselors = CounselingAgency.objects.all()
         abbr2 = services.filter(abbr__exact='Abbr2')[0]
-        self.assertTrue('there were no counselors to be saved' in self.cmd.errors)
+        self.assertTrue('there were no counselors' in self.cmd.errors)
         self.assertTrue(len(services) == 2)
         self.assertTrue(len(languages) == 0)
         self.assertTrue(len(counselors) == 0)
@@ -124,7 +124,7 @@ class TestCronJob(TestCase):
         counselors = CounselingAgency.objects.all()
         abbr2 = services.filter(abbr__exact='Abbr2')[0]
         lang3 = languages.filter(abbr__exact='Lang3')[0]
-        self.assertTrue('there were no counselors to be saved' in self.cmd.errors)
+        self.assertTrue('there were no counselors' in self.cmd.errors)
         self.assertTrue(len(services) == 2)
         self.assertTrue(len(languages) == 3)
         self.assertTrue(len(counselors) == 0)

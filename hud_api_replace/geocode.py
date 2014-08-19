@@ -73,7 +73,9 @@ def geocode_get_data(address):
         gg = GoogleGeocode(_extract_zip_code(key))
         result = gg.google_maps_api()
         if 'result' in result:
-            cg, created = CachedGeodata.objects.get_or_create(key=key, lat=result['result'][1], lon=result['result'][2])
+            cg, created = CachedGeodata.objects.get_or_create(key=key)
+            cg.lat = result['result'][1]
+            cg.lon = result['result'][2]
             # 1728000 is 20 days
             cg.expires = int(time.time()) + getattr(settings, 'DJANGO_HUD_GEODATA_EXPIRATION_INTERVAL', 1728000)
             cg.save()
