@@ -1,18 +1,17 @@
 from django.http import HttpResponse
 from django.template import RequestContext, loader
 from django.db import connection, transaction
-
 from hud_api_replace.geocode import geocode_get_data
-
+from .models import CounselingAgency, Service, Language
+from forms import HudForm
 import csv
 import json
 import re
 
-from .models import CounselingAgency, Service, Language
-
 
 def geocode_zip(zipcode):
     """ Get zipcode geocoding information """
+
     try:
         return geocode_get_data(zipcode)
     except:
@@ -31,6 +30,7 @@ def return_fields(row):
 
 
 def get_request_variables(GET):
+
     """ Read query string parameters """
     variables = {}
     variables['distance'] = int(GET.get('distance', '5000'))
@@ -44,6 +44,7 @@ def get_request_variables(GET):
         variables['language'] = translate_params('language', variables['language'])
     if variables['service'] != '':
         variables['service'] = translate_params('service', variables['service'])
+
     return variables
 
 
@@ -66,6 +67,7 @@ def translate_params(param_type, values):
 
 def get_counsel_list(zipcode, GET):
     """ Return resulting data """
+
     rvars = get_request_variables(GET)
 
     # geocoding to get zipcode lat/long
@@ -110,6 +112,16 @@ def get_counsel_list(zipcode, GET):
 
 def api_entry(request, zipcode=0, output_format='json'):
     """ Descide what format to return data in """
+
+    hf = HudForm({'zipcode':zipcode})
+
+    if hf.is_valid():
+        zipcode = hf['zipcode'].value()
+    else:
+        response = HttpResponse(content_type='application/json')
+        response.write('%s' % ( {"error":"Not a Valid U.S. Zip Code"}))
+        return response
+
     if output_format == 'csv':
         return export_csv(request, zipcode)
     else:
@@ -134,15 +146,20 @@ def export_csv(request, zipcode):
 
 
 def return_json(request, zipcode):
+
     """ Return resulting data in json or jsonp format """
     callback = request.GET.get('callback', '')
+
     if not re.match(r'^[0-9a-zA-Z\_$]*$', callback):
         callback = ''
+
     data = get_counsel_list(zipcode, request.GET)
+
     if callback == '':
         response = HttpResponse(content_type='application/json')
         response.write(json.dumps(data))
     else:
+
         response = HttpResponse(content_type='application/javascript')
         response.write('%s(%s)' % (callback, json.dumps(data)))
     return response
