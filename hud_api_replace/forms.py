@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.localflavor.us.forms import USZipCodeField
 
 class HudForm(forms.Form):
-    zipcode = forms.IntegerField(label='ZipCode', min_value=00501, max_value=99951,)
+    zipcode = USZipCodeField()  #forms.CharField(widget=USZipCodeField())
