@@ -50,8 +50,9 @@ class TestGoogleGeocode(TestCase):
         signed_url = self.gc.signed_url(url)
         self.assertEqual(signed_url, None)
 
+    @patch.object(GoogleGeocode, 'signed_url')
     @patch('urllib2.urlopen')
-    def test_request_google_maps(self, mock_urlopen):
+    def test_request_google_maps(self, mock_urlopen, mock_signed_url):
         """ Testing request_google_maps """
         def urlopen_check_param(param):
             self.param = param
@@ -61,6 +62,7 @@ class TestGoogleGeocode(TestCase):
 
         mock_urlopen.side_effect = urlopen_check_param
         expected = "http://maps.googleapis.com/maps/api/geocode/json?address=20005&sensor=false&client=" + self.gc.clientID
+        mock_signed_url.return_value = expected
         response = self.gc.request_google_maps(20005)
         self.assertTrue(expected in self.param)
         self.assertEqual(response['Success'], 'success')
