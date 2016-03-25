@@ -17,7 +17,7 @@ setup(
     version=__import__('hud_api_replace').__version__,
     author='s gorobet',
     author_email='sgorobet@gmail.com',
-    packages=['hud_api_replace'],
+    packages=find_packages()
     include_package_data=True,
     description=u'An API to return Counseling Agencies list',
     classifiers=[
