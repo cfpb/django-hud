@@ -87,8 +87,8 @@ class GoogleGeocode(object):
 
     def __init__(self, zipcode):
         self.zipcode = zipcode
-        self.privateKey = settings.GOOGLE_MAPS_API_PRIVATE_KEY
-        self.clientID = settings.GOOGLE_MAPS_API_CLIENT_ID
+        self.privateKey = str(settings.GOOGLE_MAPS_API_PRIVATE_KEY)
+        self.clientID = str(settings.GOOGLE_MAPS_API_CLIENT_ID)
         # Google doesn't return any information for some postal codes for US Territories in the Pacific,
         #  we'll get geocoding info for other postal codes which are located relatively close to the original
         #  ones.
