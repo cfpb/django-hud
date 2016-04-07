@@ -1,5 +1,4 @@
 from django.core.management.base import BaseCommand, CommandError
-from django.core.mail import EmailMessage
 from django.conf import settings
 
 import urllib2
@@ -13,7 +12,6 @@ from hud_api_replace.geocode import geocode_get_data
 class Command(BaseCommand):
     help = 'Loads data from HUD into local hud_api_replace_counselingagency table.'
     # expect emails be a comma-separated list
-    notify_emails = settings.DJANGO_HUD_NOTIFY_EMAILS.split(',')
     errors = ''
     languages = {}
     services = {}
@@ -25,9 +23,7 @@ class Command(BaseCommand):
         self.load_local_data()
         self.counselors = self.hud_data('counselors')
         self.save_data()
-        if self.errors != '':
-            email = EmailMessage('Errors while loading HUD data', self.errors, to=self.notify_emails)
-            email.send()
+        self.stdout.write(self.errors)
         self.stdout.write('HUD data has been loaded.')
 
     def hud_data(self, step):
