@@ -75,7 +75,6 @@ var cfpb_hud_hca = (function() {
     L.mapbox.accessToken = 'pk.eyJ1IjoiY2ZwYiIsImEiOiJodmtiSk5zIn0.VkCynzmVYcLBxbyHzlvaQw';
     map = L.mapbox.map('hud_hca_api_map_container', 'mapbox.streets')
     .setView([40, -80], 2);
-    console.log('view set');
 	}
 
   $(document).ready(initialize_map);
