@@ -148,17 +148,18 @@ class Command(BaseCommand):
         obj.agc_SRC_CD = counselor.get('agc_SRC_CD', '')
         obj.counslg_METHOD = counselor.get('counslg_METHOD', '')
 
-        try:
-            if obj.agc_ADDR_LATITUDE == '0' or obj.agc_ADDR_LONGITUDE == '0':
-                geocode_data = geocode_get_data(obj.zipcd[:5])
-                if 'zip' in geocode_data:
-                    obj.agc_ADDR_LATITUDE = geocode_data['zip']['lat']
-                    obj.agc_ADDR_LONGITUDE = geocode_data['zip']['lng']
-                else:
-                    raise Exception('Could not obtain geocoding information for zipcode [%s]' % obj.zipcd)
-            obj.save()
-        except Exception as e:
-            self.errors += 'Error while saving agency [%s]: %s\n' % (obj.nme, e)
+        #try:
+        if obj.agc_ADDR_LATITUDE == '0' or obj.agc_ADDR_LONGITUDE == '0':
+            geocode_data = geocode_get_data(obj.zipcd[:5])
+            if 'zip' in geocode_data:
+                obj.agc_ADDR_LATITUDE = geocode_data['zip']['lat']
+                obj.agc_ADDR_LONGITUDE = geocode_data['zip']['lng']
+            else:
+                raise Exception('Could not obtain geocoding information for zipcode [%s]' % obj.zipcd)
+        obj.save()
+        #except Exception as e:
+
+        #    self.errors += 'Error while saving agency [%s]: %s\n' % (obj.nme, e)
 
     def sanitize_values(self, counselor):
         """ Change some fields so values have accepted letter case and/or values """

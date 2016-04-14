@@ -1,3 +1,3 @@
-django
+geocoder==1.12.0
 mock
 address==0.1.1
