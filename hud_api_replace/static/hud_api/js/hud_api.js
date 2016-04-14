@@ -25,7 +25,7 @@ var cfpb_hud_hca = (function() {
 	}
 
 	/*	check_data_structure() just makes sure your data has the correct structure before you start
-		requesting properties that don't exist in generate_html() and update_google_map() */
+		requesting properties that don't exist in generate_html() and update_map() */
 	var check_hud_data = function(data) {
 		if ( (data === null) || (data === 0) || (data === undefined) ) {
 			return false;
@@ -182,74 +182,62 @@ var cfpb_hud_hca = (function() {
 	/*	generate_google_map(data) takes the data and plots the markers, etc, on
 		the google map. It's called by get_counselors_by_zip(). */
 
-	function update_google_map(data) {
+	function update_map(data) {
 		// reset the map
 		for (var i = 0; i < marker_array.length; i++ ) {
-			marker_array[i].setMap(null);
+			map.removeLayer(marker_array[i]);
 		}
 		marker_array = [];
 		if (zip_marker != null) {
-			zip_marker.setMap(null);
+			map.removeLayer(zip_marker);
 		}
-		gmap.setZoom(2); 
-		var origin = new google.maps.LatLng(40, -80); 
-		gmap.setCenter(origin);
+		map.setZoom(2);
+		map.setView([40, -80]);
 
 		if ( cfpb_hud_hca.check_hud_data(data) === true ) {
-			var lat = data.zip.lat; 
-			var lng = data.zip.lng; 
-			var ziplatlng = new google.maps.LatLng(lat, lng); 
-			var zoom = 10; 
+			var lat = data.zip.lat;
+			var lng = data.zip.lng;
+			var ziplatlng = [lat, lng];
+			var zoom = 10;
 
-			gmap.setZoom(zoom); 
-			gmap.setCenter(ziplatlng);
+			map.setZoom(zoom);
+			map.setView(ziplatlng);
 
-			var bounds = new google.maps.LatLngBounds();
+			var bounds = map.getBounds();
 
-			zip_marker = new google.maps.Marker({
-				position: ziplatlng,
-				icon: {
-					path: google.maps.SymbolPath.CIRCLE,
-					fillColor: '#FFFFFF',
-					fillOpacity: 1,
-					scale: 3, 
-					strokeColor: '#CC0000',
-					strokeWeight: 3
-				},
-				zIndex: -99,
-				draggable: false,
-				map: gmap
-			});
+			zip_marker = L.circle(ziplatlng, 3).addTo(map);
 
 			$.each( data.counseling_agencies, function(i, val) {
-				var position = new google.maps.LatLng(val.agc_ADDR_LATITUDE, val.agc_ADDR_LONGITUDE);
-				var z = 11 - i;
+        var position = new L.LatLng(val.agc_ADDR_LATITUDE, val.agc_ADDR_LONGITUDE);
 				var number = i + 1;
 				if ( number < 10 ) {
 					number = '0' + number;
 				}
-				marker_array[i] = new google.maps.Marker({
-					position: position,
-					icon: '/wp-content/themes/cfpb_nemo/_/img/hud_gmap/agc_' + number + '.png',
-					map: gmap,
-					title: val.nme,
-					zIndex: z
-				});
-				bounds.extend(position);
 
-				google.maps.event.addListener(marker_array[i], 'click', function() {
+        var icon = L.icon({
+          iconUrl: '/static/nemo/_/img/hud_gmap/agc_' + number + '.png',
+          iconAnchor: [20, 50]
+        });
+
+				var marker = new L.Marker(position, {icon: icon}).addTo(map);
+        marker_array[i] = marker;
+
+
+				marker.on('click', function() {
 					$(document.body).animate({'scrollTop':   $('#hud-result-' + number).offset().top }, 1000);
-				});	
+				});
+
+        bounds.extend(position);
 			});
 
-			gmap.fitBounds(bounds);
+      map.fitBounds(bounds);
 		}
 	}
 
 	/*	get_counselors_by_zip(zip) handles the AJAX request and calls other functions
 		to update the contant. It takes in a zip code and calls our local API of HUD data,
 		then calls generate_html_results() to generate the results list, and
-		update_google_map() to update the google map. */
+		update_map() to update the map. */
 
 	function get_counselors_by_zip(zip) {
 		// if zip fails check, then clear and reset the page.
@@ -257,7 +245,7 @@ var cfpb_hud_hca = (function() {
 			$('#hud_hca_api_results_info').hide();
 			$('#hud_hca_api_results_table').hide();	
 			generate_html_results(0);
-			update_google_map(0);
+			update_map(0);
 		}
 		else {
 			var results = '';
@@ -277,7 +265,7 @@ var cfpb_hud_hca = (function() {
 				}
 				$('#textbox').html(response);
 				generate_html_results(response);
-				update_google_map(response);
+				update_map(response);
 			});
 			request.fail(function() {
 				
