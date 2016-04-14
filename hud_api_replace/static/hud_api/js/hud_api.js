@@ -197,7 +197,7 @@ var cfpb_hud_hca = (function() {
 			var lat = data.zip.lat;
 			var lng = data.zip.lng;
 			var ziplatlng = [lat, lng];
-			var zoom = 10;
+			var zoom = 14;
 
 			map.setZoom(zoom);
 			map.setView(ziplatlng);
