@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from django.shortcuts import render
 from django.template import RequestContext, loader
 from django.db import connection, transaction
 from hud_api_replace.geocode import geocode_get_data
@@ -124,9 +125,16 @@ def api_entry(request, zipcode=0, output_format='json'):
 
     if output_format == 'csv':
         return export_csv(request, zipcode)
+    elif output_format == 'html':
+        return export_html(request, zipcode)
     else:
         return return_json(request, zipcode)
 
+
+def export_html(request, zipcode):
+    data = get_counsel_list(zipcode, request.GET)
+
+    return render(request,'hud_list.html',data )
 
 def export_csv(request, zipcode):
     """ Return resulting data in csv format """
