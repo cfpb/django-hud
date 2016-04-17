@@ -203,12 +203,25 @@ var cfpb_hud_hca = (function() {
 			map.setView(ziplatlng);
 
 			var bounds = map.getBounds();
+      var xmax = -Infinity;
+      var xmin = Infinity;
+      var ymax = -Infinity;
+      var ymin = Infinity;
 
 			zip_marker = L.circle(ziplatlng, 3).addTo(map);
 
 			$.each( data.counseling_agencies, function(i, val) {
-        var position = new L.LatLng(val.agc_ADDR_LATITUDE, val.agc_ADDR_LONGITUDE);
+        var lat = val.agc_ADDR_LATITUDE;
+        var lng = val.agc_ADDR_LONGITUDE
+        var position = new L.LatLng(lat, lng);
+
+        if(lat > ymax) ymax = lat;
+        if(lat < ymin) ymin = lat;
+        if(lng > xmax) xmax = lng;
+        if(lng < xmin) xmin = lng;
+
 				var number = i + 1;
+
 				if ( number < 10 ) {
 					number = '0' + number;
 				}
@@ -221,15 +234,16 @@ var cfpb_hud_hca = (function() {
 				var marker = new L.Marker(position, {icon: icon}).addTo(map);
         marker_array[i] = marker;
 
-
 				marker.on('click', function() {
 					$(document.body).animate({'scrollTop':   $('#hud-result-' + number).offset().top }, 1000);
 				});
-
-        bounds.extend(position);
 			});
 
-      map.fitBounds(bounds);
+      //shift the max bounds so that the dropped pins are always on screen
+      var xd = (xmax - xmin)/10;
+      var yd = (ymax - ymin)/10;
+
+      map.fitBounds([[ymin - yd, xmin - xd], [ymax + yd, xmax + xd]]);
 		}
 	}
 
