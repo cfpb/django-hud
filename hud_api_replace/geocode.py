@@ -61,7 +61,7 @@ def geocode_get_data(address):
         cached = _geocode_cached_data(key)
     except:
         # apparently _geocode_cached_data raised an Exception
-        result = geocoder.mapbox(address)
+        result = geocoder.mapbox(address+", usa")
         cached, created = CachedGeodata.objects.get_or_create(key=key)
         cached.lat = result.lat
         cached.lon = result.lng
