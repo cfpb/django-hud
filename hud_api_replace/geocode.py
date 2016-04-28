@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
 import urllib2
 import json
@@ -7,6 +8,7 @@ import hmac
 import base64
 import hashlib
 import geocoder
+from geocoder.mapbox import Mapbox
 
 # This library has some issues when parsing addresses, esp. those with suite/apt #s.
 #  which results in weird looking keys. I can live with that, we only need zipcode
@@ -18,23 +20,6 @@ import time
 from hud_api_replace.models import CachedGeodata
 
 
-def _geocode_compute_key(address):
-    """Generate a key out of <address>."""
-    if address == '' or re.match('^[0-9]{5}(-[0-9]{4})?$', str(address)):
-        return address
-    try:
-        ap = AddressParser()
-        addr = ap.parse_address(address)
-        street = '%s %s %s %s' % (addr.house_number, addr.street_prefix, addr.street, addr.street_suffix)
-        citystate = '%s,%s' % (addr.city, addr.state)
-        # address lib doesn't handle xxxxx-xxxx zip codes
-        search = re.search('([0-9]{5})-[0-9]{4}$', address)
-        if search:
-            addr.zip = search.groups()[0]
-        return '%s|%s|%s' % (street.upper(), citystate.upper(), addr.zip)
-    except:
-        return ''
-
 
 def _extract_zip_code(key):
     """What it says."""
@@ -44,25 +29,21 @@ def _extract_zip_code(key):
     return key
 
 
-def _geocode_cached_data(key):
-    """Returns data stored for <key>."""
-    try:
-        result = CachedGeodata.objects.all().get(key=key).filter(expires__gte=time.time())
-        return result
-    except:
-        raise Exception('No cached data found for %s', key)
-
-
-
-def geocode_get_data(address):
+def geocode_get_data(address, zip_only=False):
     """Main function to obtain geocoding information."""
+    address = str(address) + ", usa"
     try:
-        key = _geocode_compute_key(address)
-        cached = _geocode_cached_data(key)
-    except:
-        # apparently _geocode_cached_data raised an Exception
-        result = geocoder.mapbox(address+", usa")
-        cached, created = CachedGeodata.objects.get_or_create(key=key)
+        cached = CachedGeodata.objects.all().filter(expires__gte=time.time()).get(key=address)
+    except ObjectDoesNotExist:
+        if zip_only:
+            mb_result = Mapbox(address ,types='postcode')
+            if mb_result.latlng:
+                result = mb_result
+            else:
+                result = geocoder.osm(address)
+        else:
+            result = geocoder.mapbox(address)
+        cached, created = CachedGeodata.objects.get_or_create(key=address)
         cached.lat = result.lat
         cached.lon = result.lng
         # 1728000 is 20 days

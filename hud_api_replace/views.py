@@ -13,10 +13,10 @@ import re
 def geocode_zip(zipcode):
     """ Get zipcode geocoding information """
 
-    try:
-        return geocode_get_data(zipcode)
-    except:
-        return {'error': 'Error while getting geocoding information for ' + zipcode}
+    #try:
+    return geocode_get_data(zipcode, zip_only=True)
+    #except:
+    #    return {'error': 'Error while getting geocoding information for ' + zipcode}
 
 
 def return_fields(row):
