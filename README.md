@@ -108,9 +108,7 @@ Add `callback` parameter to the call. Works only when format is `json`.
 
 * If `South` is used, migrations folder will have to be removed.
 
-* Make sure variables `settings.GOOGLE_MAPS_API_PRIVATE_KEY`, `settings.GOOGLE_MAPS_API_CLIENT_ID` and
-`settings.DJANGO_HUD_NOTIFY_EMAILS` are set. `settings.DJANGO_HUD_NOTIFY_EMAILS` is a comma separated list of
-emails.
+* Make sure you've set an environment variable `MAPBOX_ACCESS_TOKEN`, as described [here](http://geocoder.readthedocs.io/providers/Mapbox.html#environment-variables). If you need a mapbox token, [sign up here](https://www.mapbox.com/studio/signup/?path=%2Faccount)
 
 * `manage.py syncdb` to create three tables used by the module.
 
