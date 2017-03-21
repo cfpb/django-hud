@@ -13,6 +13,11 @@ def read_file(filename):
         return ''
 
 
+setup_requires = [
+    'setuptools-git-version==1.0.3',
+]
+
+
 install_requires = [
     'address==0.1.1',
     'Django>=1.8,<1.11',
@@ -28,7 +33,7 @@ testing_extras = [
 
 setup(
     name='django_hud',
-    version=__import__('hud_api_replace').__version__,
+    version_format='{tag}.dev{commitcount}+{gitsha}',
     maintainer='CFPB',
     maintainer_email='tech@cfpb.gov',
     packages=find_packages(),
@@ -45,6 +50,7 @@ setup(
     ],
     long_description=read_file('README.md'),
     zip_safe=False,
+    setup_requires=setup_requires,
     install_requires=install_requires,
     extras_require={
         'testing': testing_extras,
