@@ -1,19 +1,13 @@
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
-import urllib2
 import json
-import urlparse
 import hmac
 import base64
 import hashlib
 import geocoder
 from geocoder.mapbox import Mapbox
 
-# This library has some issues when parsing addresses, esp. those with suite/apt #s.
-#  which results in weird looking keys. I can live with that, we only need zipcode
-#  parsed correctly  so we can use it to call GoogleGeocode.
-from address import AddressParser
 import re
 import time
 

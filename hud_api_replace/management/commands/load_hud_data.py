@@ -1,7 +1,13 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
-import urllib2
+# Support for Python 2 and Python 3.
+try:
+    from urllib2 import urlopen, URLError
+except ImportError:
+    from urllib.error import URLError
+    from urllib.request import urlopen
+
 import json
 import re
 
@@ -39,9 +45,9 @@ class Command(BaseCommand):
         }
 
         try:
-            response = urllib2.urlopen(urls[step])
+            response = urlopen(urls[step])
             return json.loads(response.read())
-        except urllib2.URLError as e:
+        except URLError as e:
             self.errors += 'Error when accessing HUD server: %s\n' % e.reason
             return []
         except Exception as e:

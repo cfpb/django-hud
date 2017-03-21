@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
 import datetime
 
@@ -11,6 +12,7 @@ class CachedGeodata(models.Model):
     expires = models.PositiveIntegerField(null=True)
 
 
+@python_2_unicode_compatible
 class CounselingAgency(models.Model):
     # example result can be obtained from
     # http://data.hud.gov/Housing_Counselor/searchByLocation?Lat=38.853231&Long=-77.305097&Distance=10
@@ -48,21 +50,23 @@ class CounselingAgency(models.Model):
     agc_SRC_CD = models.CharField(max_length=255)           # ex "HUD",
     counslg_METHOD = models.CharField(max_length=255)       # ex null
 
-    def __unicode__(self):
+    def __str__(self):
         return self.nme
 
 
+@python_2_unicode_compatible
 class Language(models.Model):
     abbr = models.CharField(max_length=5, unique=True)
     name = models.CharField(max_length=20)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class Service(models.Model):
     abbr = models.CharField(max_length=5, unique=True)
     name = models.CharField(max_length=100)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name

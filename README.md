@@ -1,4 +1,8 @@
-`hud_api_replace` is a Django project that provides a very basic API on top of [HUD Housing
+[![Build Status](https://travis-ci.org/cfpb/django-hud.svg?branch=master)](https://travis-ci.org/cfpb/django-hud) [![Coverage Status](https://coveralls.io/repos/github/cfpb/django-hud/badge.svg?branch=master)](https://coveralls.io/github/cfpb/django-hud?branch=master)
+
+# django-hud
+
+`django-hud` is a Django project that provides a very basic API on top of [HUD Housing
 Counseling](http://portal.hud.gov/hudportal/HUD?src=/program_offices/housing/sfh/hcc) data. It returns a list of
 HUD approved housing counseling agencies throughout the country that can provide advice on buying a home, renting,
 defaults, foreclosures, and credit issues near a given zipcode sorted by distance from it in ascending order.
@@ -102,11 +106,24 @@ and Credit Repair Workshops] services:
 
 Add `callback` parameter to the call. Works only when format is `json`.
 
+
+## Testing
+
+* To run unit tests against a testing matrix of Python and Django versions, run:
+
+```sh
+$ tox
+```
+
+You can also run a particular version, e.g.:
+
+```sh
+$ tox -e py27-dj18
+```
+
 ## Installation
 
 * Add `hud_api_replace` to `INSTALLED_APPS` in settings file.
-
-* If `South` is used, migrations folder will have to be removed.
 
 * Make sure you've set an environment variable `MAPBOX_ACCESS_TOKEN`, as described [here](http://geocoder.readthedocs.io/providers/Mapbox.html#environment-variables). If you need a mapbox token, [sign up here](https://www.mapbox.com/studio/signup/?path=%2Faccount)
 
