@@ -1,4 +1,5 @@
 import os
+
 from setuptools import setup, find_packages
 
 
@@ -12,14 +13,27 @@ def read_file(filename):
         return ''
 
 
+install_requires = [
+    'address==0.1.1',
+    'Django>=1.8,<1.11',
+    'geocoder==1.12.0',
+]
+
+
+testing_extras = [
+    'coverage>=3.7.0',
+    'mock>=1.0.0',
+]
+
+
 setup(
     name='django_hud',
     version=__import__('hud_api_replace').__version__,
-    author='s gorobet',
-    author_email='sgorobet@gmail.com',
+    maintainer='CFPB',
+    maintainer_email='tech@cfpb.gov',
     packages=find_packages(),
     include_package_data=True,
-    description=u'An API to return Counseling Agencies list',
+    description='An API to return Counseling Agencies list',
     classifiers=[
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Programming Language :: Python',
@@ -31,4 +45,8 @@ setup(
     ],
     long_description=read_file('README.md'),
     zip_safe=False,
+    install_requires=install_requires,
+    extras_require={
+        'testing': testing_extras,
+    },
 )
