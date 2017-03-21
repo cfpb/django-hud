@@ -102,11 +102,24 @@ and Credit Repair Workshops] services:
 
 Add `callback` parameter to the call. Works only when format is `json`.
 
+
+## Testing
+
+* To run unit tests against a testing matrix of Python and Django versions, run:
+
+```sh
+$ tox
+```
+
+You can also run a particular version, e.g.:
+
+```sh
+$ tox -e py27-dj18
+```
+
 ## Installation
 
 * Add `hud_api_replace` to `INSTALLED_APPS` in settings file.
-
-* If `South` is used, migrations folder will have to be removed.
 
 * Make sure you've set an environment variable `MAPBOX_ACCESS_TOKEN`, as described [here](http://geocoder.readthedocs.io/providers/Mapbox.html#environment-variables). If you need a mapbox token, [sign up here](https://www.mapbox.com/studio/signup/?path=%2Faccount)
 
