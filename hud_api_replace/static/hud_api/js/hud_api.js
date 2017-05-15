@@ -111,7 +111,12 @@ var cfpb_hud_hca = (function() {
 
 				// Set and insert  the agency name
 				var name = val.nme;
-				listing.find('.hud_hca_api_counselor').html(name);
+				if (val.weburl !== "Not available") {
+						name = '<a href="' + val.weburl + '" class="icon-link icon-link__external-link">' +
+								'<span class="icon-link_text">' + name + '</span> ' +
+						'</a>';
+				}
+				listing.find(".hud_hca_api_counselor").html(name);
 
 				// Set and insert the street address
 				var address = val.adr1;
@@ -133,8 +138,10 @@ var cfpb_hud_hca = (function() {
 
 				// Add link to valid web sites
 				var weburl = val.weburl;
-				if ( weburl != 'Not available') {
-					weburl = '<a href="' + weburl + '">' + weburl + '</a>';
+				if (weburl !== "Not available") {
+						weburl = '<a href="' + weburl + '" class="icon-link icon-link__external-link">' +
+								'<span class="icon-link_text">' + weburl + '</span> ' +
+						'</a>';
 				}
 				// Insert weburl
 				listing.find('.hud_hca_api_site').html(weburl);
