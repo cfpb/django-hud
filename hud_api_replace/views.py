@@ -1,13 +1,13 @@
-from django.http import HttpResponse
-from django.shortcuts import render
-from django.template import RequestContext, loader
-from django.db import connection, transaction
-from hud_api_replace.geocode import geocode_get_data
-from .models import CounselingAgency, Service, Language
-from forms import HudForm
 import csv
 import json
 import re
+
+from django.db import connection
+from django.http import HttpResponse
+
+from hud_api_replace.forms import HudForm
+from hud_api_replace.geocode import geocode_get_data
+from hud_api_replace.models import CounselingAgency, Service, Language
 
 
 def geocode_zip(zipcode):
@@ -111,7 +111,7 @@ def get_counsel_list(zipcode, GET):
     return data
 
 
-def api_entry(request, zipcode=0, output_format='json'):
+def api_entry(request, zipcode, output_format='json'):
     """ Descide what format to return data in """
 
     hf = HudForm({'zipcode':zipcode})
@@ -125,16 +125,9 @@ def api_entry(request, zipcode=0, output_format='json'):
 
     if output_format == 'csv':
         return export_csv(request, zipcode)
-    elif output_format == 'html':
-        return export_html(request, zipcode)
     else:
         return return_json(request, zipcode)
 
-
-def export_html(request, zipcode):
-    data = get_counsel_list(zipcode, request.GET)
-
-    return render(request,'hud_list.html',data )
 
 def export_csv(request, zipcode):
     """ Return resulting data in csv format """
