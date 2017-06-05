@@ -1,5 +1,3 @@
 include AUTHORS
 include LICENSE
 include README.rst
-recursive-include hud_api_replace/static *
-global-include *.html *.txt *.ttf *.woff
