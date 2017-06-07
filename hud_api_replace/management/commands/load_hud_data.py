@@ -10,10 +10,17 @@ except ImportError:
 
 import json
 import re
+import hashlib
+from functools import partial
 
 from hud_api_replace.models import CounselingAgency, Language, Service
-from hud_api_replace.geocode import geocode_get_data
+from hud_api_replace.geocode import PermanentMapbox
 
+geocoder = partial(PermanentMapbox, country='us', types='address')
+
+def needs_geocoding(sanitized):
+    return (sanitized['agc_ADDR_LATITUDE'] is None
+    or sanitized['agc_ADDR_LONGITUDE'] is None)
 
 class Command(BaseCommand):
     help = 'Loads data from HUD into local hud_api_replace_counselingagency table.'
@@ -78,9 +85,13 @@ class Command(BaseCommand):
             for item in self.languages:
                 self.insert_lang_serv(Language(), [item, self.languages[item]])
         if self.counselors:
-            CounselingAgency.objects.all().delete()
+
             for item in self.counselors:
-                self.insert_counselor(item)
+                hasher = hashlib.sha256()
+                normalized_json = json.dumps(item, sort_keys=True)
+                hasher.update(normalized_json)
+                counselor_hash = hasher.hexdigest()
+                self.update_counselor(counselor_hash, item)
         else:
             self.errors += 'Error: there were no counselors returned from the HUD service'
 
@@ -115,57 +126,23 @@ class Command(BaseCommand):
             else:
                 self.errors += 'Error while saving: %s\n' % e
 
-    def insert_counselor(self, counselor):
+    def update_counselor(self, agc_hash, agc_data):
         """ Save a counseling agency to local database """
-        if not counselor or counselor == {}:
-            return
-        self.sanitize_values(counselor)
-
-        obj = CounselingAgency()
-        obj.agcid = counselor.get('agcid', '')
-        obj.adr1 = counselor.get('adr1', '')
-        obj.adr2 = counselor.get('adr2', '')
-        obj.city = counselor.get('city', '')
-        obj.email = counselor.get('email', '')
-        obj.fax = counselor.get('fax', '')
-        obj.nme = counselor.get('nme', '')
-        obj.phone1 = counselor.get('phone1', '')
-        obj.statecd = counselor.get('statecd', '')
-        obj.weburl = counselor.get('weburl', '')
-        obj.zipcd = counselor.get('zipcd', '')
-        obj.agc_ADDR_LATITUDE = counselor.get('agc_ADDR_LATITUDE', '')
-        obj.agc_ADDR_LONGITUDE = counselor.get('agc_ADDR_LONGITUDE', '')
-        obj.languages = counselor.get('languages', '')
-        obj.services = counselor.get('services', '')
-        obj.parentid = counselor.get('parentid', '')
-        obj.county_NME = counselor.get('county_NME', '')
-        obj.phone2 = counselor.get('phone2', '')
-        obj.mailingadr1 = counselor.get('mailingadr1', '')
-        obj.mailingadr2 = counselor.get('mailingadr2', '')
-        obj.mailingcity = counselor.get('mailingcity', '')
-        obj.mailingzipcd = counselor.get('mailingzipcd', '')
-        obj.mailingstatecd = counselor.get('mailingstatecd', '')
-        obj.state_NME = counselor.get('state_NME', '')
-        obj.state_FIPS_CODE = counselor.get('state_FIPS_CODE', '')
-        obj.faithbased = counselor.get('faithbased', '')
-        obj.colonias_IND = counselor.get('colonias_IND', '')
-        obj.migrantwkrs_IND = counselor.get('migrantwkrs_IND', '')
-        obj.agc_STATUS = counselor.get('agc_STATUS', '')
-        obj.agc_SRC_CD = counselor.get('agc_SRC_CD', '')
-        obj.counslg_METHOD = counselor.get('counslg_METHOD', '')
-
-        #try:
-        if obj.agc_ADDR_LATITUDE == '0' or obj.agc_ADDR_LONGITUDE == '0':
-            geocode_data = geocode_get_data(obj.zipcd[:5])
-            if 'zip' in geocode_data:
-                obj.agc_ADDR_LATITUDE = geocode_data['zip']['lat']
-                obj.agc_ADDR_LONGITUDE = geocode_data['zip']['lng']
-            else:
-                raise Exception('Could not obtain geocoding information for zipcode [%s]' % obj.zipcd)
-        obj.save()
-        #except Exception as e:
-
-        #    self.errors += 'Error while saving agency [%s]: %s\n' % (obj.nme, e)
+        self.sanitize_values(agc_data)
+        counselor_id = agc_data.pop('agcid')
+        manager = CounselingAgency.objects
+        agency, created = manager.get_or_create(agcid = counselor_id,
+                                                defaults = agc_data)
+        if created:
+            agency.source_data_hash = agc_hash
+            agency.geocode_if_needed(geocoder)
+        else:
+            if (unicode(agc_hash) != agency.source_data_hash):
+                agency.update(agc_data)
+                agency.source_data_hash = agc_hash
+                agency.save()
+                
+            agency.geocode_if_needed(geocoder)
 
     def sanitize_values(self, counselor):
         """ Change some fields so values have accepted letter case and/or values """
@@ -185,11 +162,11 @@ class Command(BaseCommand):
         counselor['weburl'] = self.reformat_weburl(counselor['weburl'])
         counselor['email'] = self.reformat_email(counselor['email'])
 
-        if counselor['agc_ADDR_LATITUDE'] == '' or counselor['agc_ADDR_LATITUDE'] is None:
-            counselor['agc_ADDR_LATITUDE'] = '0'
+        if counselor['agc_ADDR_LATITUDE'] in ('', '0'):
+            counselor['agc_ADDR_LATITUDE'] = None
 
-        if counselor['agc_ADDR_LONGITUDE'] == '' or counselor['agc_ADDR_LONGITUDE'] is None:
-            counselor['agc_ADDR_LONGITUDE'] = '0'
+        if counselor['agc_ADDR_LONGITUDE'] in ('', '0'):
+            counselor['agc_ADDR_LONGITUDE'] = None
 
     # Shamelessly copied most of hud-api-proxy.php
     def title_case(self, string):
