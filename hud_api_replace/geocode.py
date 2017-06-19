@@ -41,12 +41,9 @@ def geocode_get_data(address, zip_only=False):
             mb_result = PermanentMapbox(address,
                                         types='postcode',
                                         country='us')
-            if mb_result.latlng:
-                result = mb_result
-            else:
-                result = geocoder.osm(address)
+            result = mb_result
         else:
-            result = PermanentMapbox(address, country="us")
+            result = PermanentMapbox(address, country='us')
         cached, created = CachedGeodata.objects.get_or_create(key=address)
         cached.lat = result.lat
         cached.lon = result.lng
