@@ -28,10 +28,10 @@ class TestGeocode(TestCase):
 
     def test_geocode_get_data__existent(self):
         """Testing geocode_get_data, with cached argument."""
-        cg = CachedGeodata(key='20005, usa', lat=111, lon=222, expires=time.time() + 10000)
+        cg = CachedGeodata(key='20005', lat=111, lon=222, expires=time.time() + 10000)
         cg.save()
         result = geocode_get_data('20005')
         self.assertTrue('zip' in result)
-        self.assertEqual(result['zip']['zipcode'], '20005, usa')
+        self.assertEqual(result['zip']['zipcode'], '20005')
         self.assertEqual(result['zip']['lat'], 111)
         self.assertEqual(result['zip']['lng'], 222)
