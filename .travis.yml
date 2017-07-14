@@ -1,22 +1,25 @@
 language: python
 cache: pip
-
 matrix:
   include:
-    - env: TOXENV=py27-dj18
-      python: 2.7
-    - env: TOXENV=py27-dj110
-      python: 2.7
-    - env: TOXENV=py35-dj18
-      python: 3.5
-    - env: TOXENV=py35-dj110
-      python: 3.5
-
-install:
-  pip install tox coveralls
-
-script:
-  tox
-
-after_success:
-  coveralls
+  - env: TOXENV=py27-dj18
+    python: 2.7
+  - env: TOXENV=py27-dj110
+    python: 2.7
+  - env: TOXENV=py35-dj18
+    python: 3.5
+  - env: TOXENV=py35-dj110
+    python: 3.5
+install: pip install tox coveralls
+script: tox
+after_success: coveralls
+before_deploy: "pip wheel ."
+deploy:
+  provider: releases
+  api_key:
+    secure:
+      secure: W0U4AdpqLVjNXOygZ4ceM7f63Jw0o2QM5Hwpu3hC25JybMgE5ZFohk5STqhRP5/BnQxz0UnQCzjnLX4rzPILYmVJ1AjiYrUWkh/HluMGXicTBkDc1LF3pV70offkeMxfnDOZg7BmRdBGETgnOUZbGqi++iYKWc6alqhoTvizp18=
+  file: '*.whl'
+  skip_cleanup: true
+  on:
+    tags: true
