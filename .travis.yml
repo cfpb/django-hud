@@ -1,22 +1,27 @@
 language: python
 cache: pip
-
-matrix:
+install: pip install tox coveralls
+script: tox
+python: 2.7
+jobs:
   include:
-    - env: TOXENV=py27-dj18
-      python: 2.7
-    - env: TOXENV=py27-dj110
-      python: 2.7
-    - env: TOXENV=py35-dj18
-      python: 3.5
-    - env: TOXENV=py35-dj110
-      python: 3.5
-
-install:
-  pip install tox coveralls
-
-script:
-  tox
-
-after_success:
-  coveralls
+  - stage: tests
+    env: TOXENV=py27-dj18
+    python: 2.7
+  - env: TOXENV=py27-dj110
+    python: 2.7
+  - env: TOXENV=py35-dj18
+    python: 3.5
+  - env: TOXENV=py35-dj110
+    python: 3.5
+  - stage: GitHub Release
+    script: python2.7 setup.py bdist_wheel
+    deploy:
+      provider: releases
+      skip_cleanup: true
+      api_key:
+        secure: MJCHgq7IYckdvuCE1eRkm75UGmQGOI0UoYfFkC8VGZOUjs0HBxJfrppzBH/KPzjbhRcfzJfhClvYYcRin3DBKNbSy8sHWil86dcfrGOidStv68Fu/Pa2ZDYA4TVaDS+x1s8/SRqyKcLBqHZeVUBTrzQ0UxxEadeaYQ/F10BcZJg=
+      file_glob: true
+      file: dist/*.whl
+      on:
+        tags: true
