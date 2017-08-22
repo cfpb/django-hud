@@ -1,8 +1,6 @@
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
-import datetime
-
 
 class CachedGeodata(models.Model):
     """Model to save geocoding information locally."""
@@ -10,6 +8,11 @@ class CachedGeodata(models.Model):
     lat = models.FloatField('Latitude', null=True)
     lon = models.FloatField('Longitude', null=True)
     expires = models.PositiveIntegerField(null=True)
+
+    class Meta:
+        index_together = (
+            ('key', 'expires'),
+        )
 
 
 @python_2_unicode_compatible
