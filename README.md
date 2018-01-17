@@ -2,7 +2,7 @@
 
 # django-hud
 
-**Deprecation Notice:** This project is a legacy API and is longer being actively maintained or used to serve this data to consumerfinance.gov, but may continue serve as a model stand-alone API of HUD Housing Counseling data. Our current implementation is part of the [cfgov-refresh](https://github.com/cfpb/cfgov-refresh) project.
+**Deprecation Notice:** This project is a legacy API and is longer being actively maintained or used to serve data to consumerfinance.gov. For those interested, it may continue serve as a model stand-alone API of HUD Housing Counseling data. Our current implementation is part of the [cfgov-refresh](https://github.com/cfpb/cfgov-refresh) project.
 
 `django-hud` is a Django project that provides a very basic API on top of [HUD Housing
 Counseling](http://portal.hud.gov/hudportal/HUD?src=/program_offices/housing/sfh/hcc) data. It returns a list of
