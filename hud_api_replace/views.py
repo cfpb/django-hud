@@ -1,5 +1,6 @@
 import csv
 import json
+from math import acos, cos, radians, sin
 import re
 
 from django.db import connection
@@ -66,6 +67,47 @@ def translate_params(param_type, values):
     return filter(bool, items)
 
 
+def get_counselors_query_select_mysql():
+    return """
+SELECT
+    *,
+    (
+        %s *
+        acos(
+            cos(radians(%s)) *
+            cos(radians(agc_ADDR_LATITUDE)) *
+            cos(radians(agc_ADDR_LONGITUDE) - radians(%s)) +
+            sin(radians(%s)) *
+            sin(radians(agc_ADDR_LATITUDE))
+        )
+    ) AS distance
+FROM {table}
+"""
+
+
+def get_counselors_query_select():
+    return """
+SELECT * FROM (
+    SELECT
+        *,
+        (
+            %s *
+            acos(
+                cos(radians(%s)) *
+                cos(radians(cast(\"agc_ADDR_LATITUDE\" AS float))) *
+                cos(
+                    radians(cast(\"agc_ADDR_LONGITUDE\" AS float)) -
+                    radians(%s)
+                ) +
+                sin(radians(%s)) *
+                sin(radians(cast(\"agc_ADDR_LATITUDE\" AS float)))
+            )
+        ) AS distance
+    FROM {table}
+) x
+"""
+
+
 def get_counsel_list(zipcode, GET):
     """ Return resulting data """
 
@@ -77,36 +119,59 @@ def get_counsel_list(zipcode, GET):
         latitude = data['zip']['lat']
         longitude = data['zip']['lng']
 
-        # from
-        # http://stackoverflow.com/questions/1916953/filter-zipcodes-by-proximity-in-django-with-the-spherical-law-of-cosines
-        eradius = 3959  # Earth radius in miles
-        sql = """SELECT *, (%s * acos(cos(radians(%s)) * cos(radians(agc_ADDR_LATITUDE)) *
-            cos(radians(agc_ADDR_LONGITUDE) - radians(%s)) + sin(radians(%s)) * sin(radians(agc_ADDR_LATITUDE))))
-            AS distance FROM hud_api_replace_counselingagency """
-        qry_args = [eradius, latitude, longitude, latitude]
+    cursor = connection.cursor()
+    if 'sqlite' in connection.vendor:
+        cursor.connection.create_function('acos', 1, acos)
+        cursor.connection.create_function('cos', 1, cos)
+        cursor.connection.create_function('radians', 1, radians)
+        cursor.connection.create_function('sin', 1, sin)
 
-        prepend = ' WHERE ('
-        if rvars['language']:
-            for lang in rvars['language']:
-                sql += prepend + 'languages LIKE %s '
-                qry_args.append('%' + lang + '%')
-                prepend = ' OR '
-            sql += ') '
-            prepend = ' AND ('
-        if rvars['service']:
-            for serv in rvars['service']:
-                sql += prepend + 'services LIKE %s '
-                qry_args.append('%' + serv + '%')
-                prepend = ' OR '
-            sql += ') '
+    # Use algorithm from https://stackoverflow.com/q/1916953 to find the
+    # closest counselors to a given location.
+    eradius = 3959  # Earth radius in miles
 
-        sql += """ HAVING distance < %s ORDER BY distance LIMIT %s OFFSET %s;"""
-        qry_args += [rvars['distance'], rvars['limit'], rvars['offset']]
+    mysql = 'mysql' in connection.vendor
+    if mysql:
+        sql_select = get_counselors_query_select_mysql()
+    else:
+        sql_select = get_counselors_query_select()
 
-        cursor = connection.cursor()
-        cursor.execute(sql, qry_args)
-        result = cursor.fetchall()
-        data['counseling_agencies'] = [return_fields(agc) for agc in result]
+    sql = sql_select.format(table=CounselingAgency._meta.db_table)
+    qry_args = [eradius, latitude, longitude, latitude]
+
+    wheres = []
+    if mysql:
+        sql += 'HAVING distance < %s'
+    else:
+        wheres += ['distance < %s']
+    qry_args += [rvars['distance']]
+
+    if rvars['language']:
+        wheres += [
+            '({})'.format(' OR '.join(
+                ('languages LIKE %' + lang + '%')
+                for lang in rvars['languages']
+            ))
+        ]
+
+    if rvars['service']:
+        wheres += [
+            '({})'.format(' OR '.join(
+                ('services LIKE %' + serv + '%s')
+                for serv in rvars['service']
+
+            ))
+        ]
+
+    if wheres:
+        sql += 'WHERE ' + ' AND '.join(wheres)
+
+    sql += ' ORDER BY distance LIMIT %s OFFSET %s;'
+    qry_args += [rvars['limit'], rvars['offset']]
+
+    cursor.execute(sql, qry_args)
+    result = cursor.fetchall()
+    data['counseling_agencies'] = [return_fields(agc) for agc in result]
 
     return data
 

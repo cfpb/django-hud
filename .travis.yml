@@ -8,11 +8,11 @@ jobs:
   - stage: tests
     env: TOXENV=py27-dj18
     python: 2.7
-  - env: TOXENV=py27-dj110
+  - env: TOXENV=py27-dj111
     python: 2.7
   - env: TOXENV=py35-dj18
     python: 3.5
-  - env: TOXENV=py35-dj110
+  - env: TOXENV=py35-dj111
     python: 3.5
   - stage: GitHub Release
     script: python2.7 setup.py bdist_wheel

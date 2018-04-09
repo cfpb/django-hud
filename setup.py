@@ -21,6 +21,7 @@ setup_requires = [
 install_requires = [
     'address==0.1.1',
     'Django>=1.8,<1.11',
+    'django-localflavor==1.1',
     'geocoder==1.12.0',
 ]
 
@@ -28,6 +29,7 @@ install_requires = [
 testing_extras = [
     'coverage>=3.7.0',
     'mock>=1.0.0',
+    'dj-database-url==0.4.2',
 ]
 
 

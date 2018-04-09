@@ -1,6 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
+import os
+
 import django
+
+import dj_database_url
 
 
 SECRET_KEY = 'not needed'
@@ -11,6 +15,9 @@ DATABASES = {
         'NAME': ':memory:',
     },
 }
+
+if 'DATABASE_URL' in os.environ:
+    DATABASES['default'] = dj_database_url.config()
 
 INSTALLED_APPS = (
     'hud_api_replace',
