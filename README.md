@@ -1,6 +1,6 @@
 # ⚠ Deprecation Notice ⚠ 
 
-**This project is a legacy API and is longer being actively maintained or used to serve data to consumerfinance.gov.** Please use the officially supported [HUD API](https://data.hud.gov/housing_counseling.html) in its place. For those interested, it may continue serve as a model stand-alone API of HUD Housing Counseling data.
+**This project is a legacy API and is longer being actively maintained or used to serve data to consumerfinance.gov.** Please use the officially supported [HUD API](https://data.hud.gov/housing_counseling.html) in its place. For those interested, it may continue to serve as a model stand-alone API of HUD Housing Counseling data.
 
 
 [![Build Status](https://travis-ci.org/cfpb/django-hud.svg?branch=master)](https://travis-ci.org/cfpb/django-hud) [![Coverage Status](https://coveralls.io/repos/github/cfpb/django-hud/badge.svg?branch=master)](https://coveralls.io/github/cfpb/django-hud?branch=master)
